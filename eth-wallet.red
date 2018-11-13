@@ -55,7 +55,9 @@ secp256: context [
 			fire [TO_ERROR(script invalid-arg)	prikey]
 		]
 		pubkey: allocate 64
-		assert 1 = secp256k1_ec_pubkey_create secp256/ctx pubkey key
+		if 1 <> secp256k1_ec_pubkey_create secp256/ctx pubkey key [
+			fire [TO_ERROR(script invalid-arg)	prikey]
+		]
 		stack/set-last as red-value! binary/load pubkey 64
 		free pubkey
 	]
@@ -125,6 +127,34 @@ secp256: context [
 		false
 	]
 
+	_recover-pubkey: routine [
+		hash		[binary!]
+		signature	[binary!]
+		/local
+			dlen	[integer!]
+			data	[byte-ptr!]
+			slen	[integer!]
+			sig		[byte-ptr!]
+			pubkey	[byte-ptr!]
+	][
+		dlen: binary/rs-length? hash
+		if dlen <> 32 [
+			fire [TO_ERROR(script invalid-arg)	hash]
+		]
+		data: binary/rs-head hash
+		slen: binary/rs-length? signature
+		if slen <> 65 [
+			fire [TO_ERROR(script invalid-arg)	signature]
+		]
+		sig: binary/rs-head signature
+		pubkey: allocate 64
+		if 1 <> secp256k1_ecdsa_recover secp256/ctx pubkey sig data [
+			fire [TO_ERROR(script invalid-arg)	hash]
+		]
+		stack/set-last as red-value! binary/load pubkey 64
+		free pubkey
+	]
+
 	;-- api
 
 	create-keypair: func [
@@ -185,6 +215,29 @@ secp256: context [
 		_verify hash sig public-key
 	]
 
+	recover-pubkey: func [
+		hash		[binary!]
+		signature	[block!]
+		return:		[binary!]
+		/local
+			sig		[binary!]
+	][
+		unless all [
+			integer? signature/1
+			binary? signature/2
+			binary? signature/3
+			32 = length? signature/2
+			32 = length? signature/3
+		][
+			return false
+		]
+		sig: make binary! 65
+		append sig signature/2
+		append sig signature/3
+		append sig signature/1
+		_recover-pubkey hash sig
+	]
+
 ]
 
 prikey: #{1C0E092D59767F632C19994E31FD306220823D0EA427C667F59FFD4D8628FBE0}
@@ -199,3 +252,5 @@ sig: secp256/sign hash prikey
 probe sig
 
 print secp256/verify hash sig pubkey
+
+print secp256/recover-pubkey hash sig
