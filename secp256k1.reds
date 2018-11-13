@@ -150,5 +150,3 @@ Red/System []
 		]
 	]
 ]
-
-ctx: secp256k1_context_create SECP256K1_CONTEXT_VERIFY or SECP256K1_CONTEXT_SIGN
