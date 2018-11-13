@@ -82,9 +82,15 @@ secp256: context [
 	]
 ]
 
-prikey: secp256/create-privkey
+prikey: #{1C0E092D59767F632C19994E31FD306220823D0EA427C667F59FFD4D8628FBE0}
+;-- DER prikey: 04035143501049f1f0155fe843e85cb224fd031ea1bd17f648710c51c53e5a53dab1c43c06c2c5a00408be06b49cf24229089b86bb552b92a91890df0a7cc4c0f8
 pubkey: secp256/create-pubkey prikey
 print prikey
 print pubkey
 
-print secp256/create-keypair
+;prikey: secp256/create-privkey
+;pubkey: secp256/create-pubkey prikey
+;print prikey
+;print pubkey
+
+;print secp256/create-keypair
