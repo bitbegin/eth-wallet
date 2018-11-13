@@ -42,12 +42,12 @@ secp256: context [
 	_create-pubkey: routine [
 		prikey		[binary!]
 		/local
-			key-len	[integer!]
+			klen	[integer!]
 			key		[byte-ptr!]
 			pubkey	[byte-ptr!]
 	][
-		key-len: binary/rs-length? prikey
-		if key-len <> 32 [
+		klen: binary/rs-length? prikey
+		if klen <> 32 [
 			fire [TO_ERROR(script invalid-arg)	prikey]
 		]
 		key: binary/rs-head prikey
@@ -58,6 +58,39 @@ secp256: context [
 		assert 1 = secp256k1_ec_pubkey_create secp256/ctx pubkey key
 		stack/set-last as red-value! binary/load pubkey 64
 		free pubkey
+	]
+
+	_sign: routine [
+		hash		[binary!]
+		prikey		[binary!]
+		/local
+			dlen	[integer!]
+			data	[byte-ptr!]
+			klen	[integer!]
+			key		[byte-ptr!]
+			sig		[byte-ptr!]
+			blk		[red-block!]
+	][
+		dlen: binary/rs-length? hash
+		if dlen <> 32 [
+			fire [TO_ERROR(script invalid-arg)	hash]
+		]
+		data: binary/rs-head hash
+		klen: binary/rs-length? prikey
+		if klen <> 32 [
+			fire [TO_ERROR(script invalid-arg)	prikey]
+		]
+		key: binary/rs-head prikey
+		sig: allocate 65
+		if 1 <> secp256k1_ecdsa_sign_recoverable secp256/ctx sig data key 0 null [
+			fire [TO_ERROR(script invalid-arg)	prikey]
+		]
+		blk: block/push-only* 3
+		block/rs-append blk as red-value! integer/push as integer! sig/65
+		block/rs-append blk as red-value! binary/load sig 32
+		block/rs-append blk as red-value! binary/load sig + 32 32
+		stack/set-last as red-value! blk
+		free sig
 	]
 
 	;-- api
@@ -88,6 +121,14 @@ secp256: context [
 	][
 		_create-pubkey private-key
 	]
+
+	sign: func [
+		hash		[binary!]
+		private-key [binary!]
+		return:		[block!]		;-- signature: [v r s]
+	][
+		_sign hash private-key
+	]
 ]
 
 prikey: #{1C0E092D59767F632C19994E31FD306220823D0EA427C667F59FFD4D8628FBE0}
@@ -96,9 +137,7 @@ pubkey: secp256/create-pubkey prikey
 print prikey
 print pubkey
 
-prikey: secp256/create-privkey
-pubkey: secp256/create-pubkey prikey
-print prikey
-print pubkey
-
-print secp256/create-keypair
+msg: "aaa"
+hash: checksum msg 'SHA256
+sig: secp256/sign hash prikey
+probe sig
