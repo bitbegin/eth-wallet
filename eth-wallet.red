@@ -31,7 +31,10 @@ secp256: context [
 			rand	[byte-ptr!]
 	][
 		rand: allocate 32
-		crypto/urandom rand 32
+		until [
+			crypto/urandom rand 32
+			1 = secp256k1_ec_seckey_verify secp256/ctx rand
+		]
 		stack/set-last as red-value! binary/load rand 32
 		free rand
 	]
@@ -44,8 +47,13 @@ secp256: context [
 			pubkey	[byte-ptr!]
 	][
 		key-len: binary/rs-length? prikey
-		assert key-len = 32
+		if key-len <> 32 [
+			fire [TO_ERROR(script invalid-arg)	prikey]
+		]
 		key: binary/rs-head prikey
+		if 1 <> secp256k1_ec_seckey_verify secp256/ctx key [
+			fire [TO_ERROR(script invalid-arg)	prikey]
+		]
 		pubkey: allocate 64
 		assert 1 = secp256k1_ec_pubkey_create secp256/ctx pubkey key
 		stack/set-last as red-value! binary/load pubkey 64
@@ -88,9 +96,9 @@ pubkey: secp256/create-pubkey prikey
 print prikey
 print pubkey
 
-;prikey: secp256/create-privkey
-;pubkey: secp256/create-pubkey prikey
-;print prikey
-;print pubkey
+prikey: secp256/create-privkey
+pubkey: secp256/create-pubkey prikey
+print prikey
+print pubkey
 
-;print secp256/create-keypair
+print secp256/create-keypair

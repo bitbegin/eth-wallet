@@ -97,7 +97,7 @@ Red/System []
 		]
 		secp256k1_ec_seckey_verify: "secp256k1_ec_seckey_verify" [
 			ctx				[integer!]
-			seckey			[byte-ptr!]
+			seckey32		[byte-ptr!]
 			return:			[integer!]
 		]
 		secp256k1_ec_pubkey_create: "secp256k1_ec_pubkey_create" [
