@@ -75,7 +75,7 @@ Red/System []
 		]
 		secp256k1_ecdsa_verify: "secp256k1_ecdsa_verify" [
 			ctx				[integer!]
-			sig				[integer!]
+			sig64			[byte-ptr!]
 			msg32			[byte-ptr!]
 			pubkey64		[byte-ptr!]
 			return:			[integer!]

@@ -93,6 +93,38 @@ secp256: context [
 		free sig
 	]
 
+	_verify: routine [
+		hash		[binary!]
+		signature	[binary!]
+		pubkey		[binary!]
+		return:		[logic!]
+		/local
+			dlen	[integer!]
+			data	[byte-ptr!]
+			slen	[integer!]
+			sig		[byte-ptr!]
+			klen	[integer!]
+			key		[byte-ptr!]
+	][
+		dlen: binary/rs-length? hash
+		if dlen <> 32 [
+			fire [TO_ERROR(script invalid-arg)	hash]
+		]
+		data: binary/rs-head hash
+		slen: binary/rs-length? signature
+		if slen <> 64 [
+			fire [TO_ERROR(script invalid-arg)	signature]
+		]
+		sig: binary/rs-head signature
+		klen: binary/rs-length? pubkey
+		if klen <> 64 [
+			fire [TO_ERROR(script invalid-arg)	pubkey]
+		]
+		key: binary/rs-head pubkey
+		if 1 = secp256k1_ecdsa_verify secp256/ctx sig data key [return true]
+		false
+	]
+
 	;-- api
 
 	create-keypair: func [
@@ -129,6 +161,30 @@ secp256: context [
 	][
 		_sign hash private-key
 	]
+
+	verify: func [
+		hash		[binary!]
+		signature	[block!]
+		public-key	[binary!]
+		return:		[logic!]
+		/local
+			sig		[binary!]
+	][
+		unless all [
+			integer? signature/1
+			binary? signature/2
+			binary? signature/3
+			32 = length? signature/2
+			32 = length? signature/3
+		][
+			return false
+		]
+		sig: make binary! 64
+		append sig signature/2
+		append sig signature/3
+		_verify hash sig public-key
+	]
+
 ]
 
 prikey: #{1C0E092D59767F632C19994E31FD306220823D0EA427C667F59FFD4D8628FBE0}
@@ -141,3 +197,5 @@ msg: "aaa"
 hash: checksum msg 'SHA256
 sig: secp256/sign hash prikey
 probe sig
+
+print secp256/verify hash sig pubkey
