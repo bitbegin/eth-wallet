@@ -8,6 +8,8 @@ Red [
 
 #system [
 	#include %bip39.reds
+	t: Mnemonic/new Type24Words "123456"
+	dump-memory as byte-ptr! t/string 1 16
 ]
 
 bip39: context [

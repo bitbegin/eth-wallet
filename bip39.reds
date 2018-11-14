@@ -112,7 +112,7 @@ read-11bits: func [
 	ret: temp >>> l
 	p: p + 1
 	temp: (as integer! p/1) >>> l
-	ret: ret + (temp and 07h)
+	ret: ret + ((temp and 07h) << 8)
 	ret
 ]
 
@@ -163,9 +163,8 @@ Mnemonic: context [
 			tstr: as c-string! BIP39_WORDLIST_ENGLISH/vl
 			tlen: length? tstr
 			copy-memory str + spos as byte-ptr! tstr tlen
-			temp: spos + 2
-			str/temp: #" "
 			spos: spos + tlen + 1
+			str/spos: #" "
 			pos: pos + 11
 		]
 		spos: spos + 1
