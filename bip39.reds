@@ -71,6 +71,21 @@ MnemonicType: context [
 			size = 256 [Type24Words]
 		]
 	]
+	for_phrase: func [
+		str			[c-string!]
+		return:		[MnemonicType!]
+		/local
+			len		[integer!]
+			count	[integer!]
+	][
+		count: 0
+		len: length? str
+		loop len [
+			if str/1 = #" " [count: count + 1]
+			str: str + 1
+		]
+		for_word_count count
+	]
 
 	total_bits: func [
 		type		[MnemonicType!]
@@ -125,26 +140,70 @@ MnemonicType: context [
 	]
 ]
 
-read-11bits: func [
+read-bits: func [
 	buf			[byte-ptr!]
 	pos			[integer!]
+	bits		[integer!]
 	return:		[integer!]
 	/local
+		ret		[integer!]
+		readed	[integer!]
 		h		[integer!]
 		l		[integer!]
-		ret		[integer!]
 		p		[byte-ptr!]
 		temp	[integer!]
+		mask	[integer!]
 ][
-	h: pos / 8 l: pos % 8
-	p: buf + h
-	temp: as integer! p/1
-	ret: temp >>> l
-	p: p + 1
-	temp: (as integer! p/1) >>> l
-	ret: ret + ((temp and 07h) << 8)
+	ret: 0
+	readed: 0
+	while [readed < bits][
+		h: pos / 8 l: pos % 8
+		p: buf + h
+		temp: (as integer! p/1) >>> l
+		if bits < (readed + (8 - l)) [
+			mask: (1 << (bits - readed)) - 1
+			temp: temp and mask
+		]
+		ret: ret + (temp << readed)
+		readed: readed + (8 - l)
+		pos: pos + (8 - l)
+	]
 	ret
 ]
+
+write-bits: func [
+	buf			[byte-ptr!]
+	pos			[integer!]
+	bits		[integer!]
+	vl			[integer!]
+	/local
+		writed	[integer!]
+		h		[integer!]
+		l		[integer!]
+		p		[byte-ptr!]
+		temp	[integer!]
+		mask	[integer!]
+][
+	writed: 0
+	while [writed < bits][
+		h: pos / 8 l: pos % 8
+		p: buf + h
+		mask: (1 << (8 - l)) - 1
+		temp: (vl >>> writed) and mask
+		either bits < (writed + (8 - l)) [
+			mask: (1 << (bits - writed + l)) - 1
+			mask: mask and (not ((1 << l) - 1))
+			mask: FFh and not mask
+		][
+			mask: (1 << l) - 1
+		]
+		p/1: as byte! ((as integer! p/1) and mask)
+		p/1: as byte! ((as integer! p/1) + (temp << l))
+		writed: writed + (8 - l)
+		pos: pos + (8 - l)
+	]
+]
+
 
 Mnemonic!: alias struct! [
 	string		[c-string!]
@@ -154,6 +213,20 @@ Mnemonic!: alias struct! [
 ]
 
 Mnemonic: context [
+
+	from_string_entropy: func [
+		str			[c-string!]
+		return:		[byte-ptr!]
+		/local
+			type	[MnemonicType!]
+			ebits	[integer!]
+			cbits	[integer!]
+	][
+		type: MnemonicType/for_phrase str
+		ebits: MnemonicType/entropy_bits type
+		cbits: MnemonicType/checksum_bits type
+		null
+	]
 
 	from_string: func [
 		str			[c-string!]
@@ -205,7 +278,7 @@ Mnemonic: context [
 		spos: 0
 		pos: 0
 		loop nwords [
-			vl: 1 + read-11bits mix pos
+			vl: 1 + read-bits mix pos 11
 			tstr: as c-string! BIP39_WORDLIST_ENGLISH/vl
 			tlen: length? tstr
 			copy-memory str + spos as byte-ptr! tstr tlen
@@ -215,6 +288,7 @@ Mnemonic: context [
 		]
 		spos: spos + 1
 		str/spos: null-byte
+		free mix
 		from_string as c-string! str password
 	]
 
