@@ -6,6 +6,7 @@ Red/System [
 	License: "BSD-3 - https://github.com/red/red/blob/master/BSD-3-License.txt"
 ]
 
+#include %bits.reds
 
 test-bits: func [
 	str			[c-string!]
