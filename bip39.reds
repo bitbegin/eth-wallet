@@ -7,6 +7,36 @@ Red/System [
 ]
 
 #include %bip39-english.reds
+#include %pbkdf2.reds
+
+generate-seed: func [
+	entropy		[byte-ptr!]
+	elen		[integer!]
+	password	[c-string!]
+	key64		[byte-ptr!]
+	return:		[logic!]
+	/local
+		passlen	[integer!]
+		saltlen	[integer!]
+		salt	[byte-ptr!]
+		ret		[logic!]
+][
+	passlen: length? password
+	saltlen: 8 + passlen
+	salt: allocate saltlen
+	copy-memory salt as byte-ptr! "mnemonic" 8
+	copy-memory salt + 8 as byte-ptr! password passlen
+	print-line elen
+	dump-memory entropy 1 elen / 16 + 1
+	print-line saltlen
+	dump-memory salt 1 saltlen / 16 + 1
+	ret: pbkdf2 crypto/ALG_SHA512 entropy elen salt saltlen 2048 key64 64
+	print-line ret
+	dump-memory key64 1 16
+	free salt
+	ret
+]
+
 
 #enum MnemonicType! [
 	Type12Words
@@ -119,12 +149,28 @@ read-11bits: func [
 Mnemonic!: alias struct! [
 	string		[c-string!]
 	seed		[byte-ptr!]
-	slen		[integer!]
 	entropy		[byte-ptr!]
 	elen		[integer!]
 ]
 
 Mnemonic: context [
+
+	from_string: func [
+		str			[c-string!]
+		password	[c-string!]
+		return:		[Mnemonic!]
+		/local
+			seed	[byte-ptr!]
+			ret		[Mnemonic!]
+	][
+		seed: allocate 64
+		generate-seed as byte-ptr! str length? str password seed
+		ret: as Mnemonic! allocate size? Mnemonic!
+		ret/string: str
+		ret/seed: seed
+		ret
+	]
+
 	from_entropy: func [
 		entropy		[byte-ptr!]
 		elen		[integer!]
@@ -169,9 +215,7 @@ Mnemonic: context [
 		]
 		spos: spos + 1
 		str/spos: null-byte
-		ret: as Mnemonic! allocate size? Mnemonic!
-		ret/string: as c-string! str
-		ret
+		from_string as c-string! str password
 	]
 
 	new: func [
