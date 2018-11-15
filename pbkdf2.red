@@ -9,7 +9,9 @@ Red [
 #system [
 	#include %pbkdf2.reds
 	key: allocate 64
-	pbkdf2_hmac_sha512 as byte-ptr! "password" 8 as byte-ptr! "salt" 4 2048 key 64
+	pbkdf2 crypto/ALG_SHA512 as byte-ptr! "password" 8 as byte-ptr! "salt" 4 2048 key 64
+	dump-hex key
+	pbkdf2 crypto/ALG_SHA1 as byte-ptr! "password" 8 as byte-ptr! "salt" 4 2048 key 20
 	dump-hex key
 ]
 
@@ -53,3 +55,4 @@ pbkdf2: func [
 ]
 
 probe pbkdf2 "password" "salt" 2048 64 'SHA512
+probe pbkdf2 "password" "salt" 2048 20 'SHA1

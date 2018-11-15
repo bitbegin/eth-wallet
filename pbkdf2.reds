@@ -6,7 +6,8 @@ Red/System [
 	License: "BSD-3 - https://github.com/red/red/blob/master/BSD-3-License.txt"
 ]
 
-pbkdf2_hmac_sha512: func [
+pbkdf2: func [
+	alg				[integer!]
 	pass			[byte-ptr!]
 	passlen			[integer!]
 	salt			[byte-ptr!]
@@ -16,6 +17,7 @@ pbkdf2_hmac_sha512: func [
 	keylen			[integer!]
 	return:			[logic!]
 	/local
+		digestlen	[integer!]
 		asalt		[byte-ptr!]
 		obuf		[byte-ptr!]
 		d1			[byte-ptr!]
@@ -26,7 +28,9 @@ pbkdf2_hmac_sha512: func [
 		r			[integer!]
 		p			[byte-ptr!]
 ][
+	digestlen: crypto/alg-digest-size alg
 	if any [
+		digestlen = 0
 		rounds < 1
 		keylen = 0
 		saltlen = 0
@@ -37,7 +41,7 @@ pbkdf2_hmac_sha512: func [
 	copy-memory asalt salt saltlen
 
 	count: 1
-	obuf: allocate 64
+	obuf: allocate digestlen
 	while [keylen > 0][
 		p: asalt + saltlen
 		p/1: as byte! (count >>> 24)
@@ -47,20 +51,20 @@ pbkdf2_hmac_sha512: func [
 		p/1: as byte! (count >>> 8)
 		p: p + 1
 		p/1: as byte! count
-		d1: crypto/calc-hmac asalt saltlen + 4 pass passlen crypto/ALG_SHA512
-		copy-memory obuf d1 64
+		d1: crypto/calc-hmac asalt saltlen + 4 pass passlen alg
+		copy-memory obuf d1 digestlen
 		loop rounds - 1 [
-			d2: crypto/calc-hmac d1 64 pass passlen crypto/ALG_SHA512
-			copy-memory d1 d2 64
+			d2: crypto/calc-hmac d1 digestlen pass passlen alg
+			copy-memory d1 d2 digestlen
 			j: 1
-			while [j <= 64][
+			while [j <= digestlen][
 				obuf/j: obuf/j xor d1/j
 				j: j + 1
 			]
 			free d2
 		]
 		free d1
-		r: either keylen > 64 [64][keylen]
+		r: either keylen > digestlen [digestlen][keylen]
 		copy-memory key obuf r
 		key: key + r
 		keylen: keylen - r
