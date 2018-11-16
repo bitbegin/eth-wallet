@@ -28,6 +28,7 @@ pbkdf2: context [
 		iterations	[integer!]
 		key-len		[integer!]
 		alg			[word!]
+		return:		[binary!]
 		/local blk-size output i salt-tail value sum len
 	][
 		blk-size: alg-digest-size alg
