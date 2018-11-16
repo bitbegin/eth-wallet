@@ -144,7 +144,7 @@ Mnemonic: context [
 	from_string_entropy: func [
 		str			[string!]
 		return:		[binary!]
-		/local words num type ebits cbits entropy elen epos w ehash
+		/local words num type ebits cbits entropy elen epos w raw ehash
 	][
 		words: split str " "
 		num: length? words
@@ -155,11 +155,14 @@ Mnemonic: context [
 		entropy: make binary! elen + 1
 		epos: 0
 		foreach w words [
-			bit-access/write-bits entropy epos 11 word-list/get-index to word! w
+			bit-access/write-bits entropy epos 11 (word-list/get-index to word! w) - 1
 			epos: epos + 11
 		]
-		ehash: checksum entropy 'SHA256
-		bit-access/write-bits entropy epos cbits ehash/1 and FFh
+		raw: copy/part entropy elen
+		ehash: checksum raw 'SHA256
+		if (pick entropy elen + 1) <> (ehash/1 and (1 << cbits - 1)) [
+			return make error! "invalid entropy!"
+		]
 		entropy
 	]
 
@@ -183,12 +186,12 @@ Mnemonic: context [
 	][
 		elen: length? entropy
 		if (elen * 8) <> MnemonicType/entropy_bits type [
-			return make error! "invalid type"
+			return make error! "invalid type!"
 		]
 		cbits: MnemonicType/checksum_bits type
 		nwords: MnemonicType/word_count type
 		ehash: checksum entropy 'SHA256
-		append entropy ehash/1 and FFh
+		append entropy ehash/1 and (1 << cbits - 1)
 		str: make string! nwords * 12
 		epos: 0
 		loop nwords [
@@ -209,7 +212,6 @@ Mnemonic: context [
 	][
 		elen: (MnemonicType/entropy_bits type) / 8
 		entropy: urandom elen
-		print ["old entropy: " entropy]
 		from_entropy entropy type password
 	]
 ]
