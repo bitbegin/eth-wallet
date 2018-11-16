@@ -10,6 +10,27 @@ Red/System [
 #include %pbkdf2.reds
 #include %bits.reds
 
+get-word-index: func [
+	word		[byte-ptr!]
+	wordlen		[integer!]
+	return:		[integer!]
+	/local
+		i		[integer!]
+		str		[c-string!]
+		len		[integer!]
+][
+	i: 1
+	loop 2048 [
+		str: as c-string! BIP39_WORDLIST_ENGLISH/i
+		len: length? str
+		if wordlen = len [
+			if 0 = compare-memory word as byte-ptr! str len [return i]
+		]
+		i: i + 1
+	]
+	-1
+]
+
 generate-seed: func [
 	entropy		[byte-ptr!]
 	elen		[integer!]
@@ -27,13 +48,13 @@ generate-seed: func [
 	salt: allocate saltlen
 	copy-memory salt as byte-ptr! "mnemonic" 8
 	copy-memory salt + 8 as byte-ptr! password passlen
-	print-line elen
-	dump-memory entropy 1 elen / 16 + 1
-	print-line saltlen
-	dump-memory salt 1 saltlen / 16 + 1
+	;print-line elen
+	;dump-memory entropy 1 elen / 16 + 1
+	;print-line saltlen
+	;dump-memory salt 1 saltlen / 16 + 1
 	ret: pbkdf2 crypto/ALG_SHA512 entropy elen salt saltlen 2048 key64 64
-	print-line ret
-	dump-memory key64 1 16
+	;print-line ret
+	;dump-memory key64 1 16
 	free salt
 	ret
 ]
@@ -80,9 +101,9 @@ MnemonicType: context [
 			count	[integer!]
 	][
 		count: 0
-		len: length? str
+		len: 1 + length? str
 		loop len [
-			if str/1 = #" " [count: count + 1]
+			if any [str/1 = #" " str/1 = null-byte] [count: count + 1]
 			str: str + 1
 		]
 		for_word_count count
@@ -146,7 +167,6 @@ Mnemonic!: alias struct! [
 	string		[c-string!]
 	seed		[byte-ptr!]
 	entropy		[byte-ptr!]
-	elen		[integer!]
 ]
 
 Mnemonic: context [
@@ -158,11 +178,42 @@ Mnemonic: context [
 			type	[MnemonicType!]
 			ebits	[integer!]
 			cbits	[integer!]
+			entropy	[byte-ptr!]
+			elen	[integer!]
+			len		[integer!]
+			ps		[byte-ptr!]
+			pe		[byte-ptr!]
+			pos		[integer!]
+			epos	[integer!]
+			index	[integer!]
+			ehash	[byte-ptr!]
+			sum		[integer!]
 	][
 		type: MnemonicType/for_phrase str
 		ebits: MnemonicType/entropy_bits type
 		cbits: MnemonicType/checksum_bits type
-		null
+		elen: ebits / 8
+		entropy: allocate ebits / 8 + 1
+		len: 1 + length? str
+		pos: 1
+		epos: 0
+		ps: as byte-ptr! str
+		pe: ps
+		loop len [
+			if any [pe/1 = #" " pe/1 = null-byte] [
+				index: get-word-index ps as integer! (pe - ps)
+				write-bits entropy epos 11 index - 1
+				epos: epos + 11
+				ps: pe + 1
+			]
+			pe: pe + 1
+		]
+		ehash: crypto/get-digest entropy elen crypto/ALG_SHA256
+		sum: (as integer! ehash/1) and ((1 << cbits) - 1)
+		elen: elen + 1
+		entropy/elen: as byte! sum
+		free ehash
+		entropy
 	]
 
 	from_string: func [
@@ -171,13 +222,16 @@ Mnemonic: context [
 		return:		[Mnemonic!]
 		/local
 			seed	[byte-ptr!]
+			entropy	[byte-ptr!]
 			ret		[Mnemonic!]
 	][
 		seed: allocate 64
 		generate-seed as byte-ptr! str length? str password seed
+		entropy: from_string_entropy str
 		ret: as Mnemonic! allocate size? Mnemonic!
 		ret/string: str
 		ret/seed: seed
+		ret/entropy: entropy
 		ret
 	]
 
@@ -189,9 +243,11 @@ Mnemonic: context [
 		return:		[Mnemonic!]
 		/local
 			ebits	[integer!]
+			cbits	[integer!]
 			nwords	[integer!]
 			ehash	[byte-ptr!]
 			mix		[byte-ptr!]
+			sum		[integer!]
 			str		[byte-ptr!]
 			spos	[integer!]
 			pos		[integer!]
@@ -205,11 +261,16 @@ Mnemonic: context [
 		if ebits <> MnemonicType/entropy_bits type [
 			fire [TO_ERROR(script invalid-arg) integer/push elen]
 		]
+		cbits: MnemonicType/checksum_bits type
 		nwords: MnemonicType/word_count type
 		ehash: crypto/get-digest entropy elen crypto/ALG_SHA256
-		mix: allocate elen + 4
+		mix: allocate elen + 1
 		copy-memory mix entropy elen
-		copy-memory mix + elen ehash 4
+		sum: (as integer! ehash/1) and ((1 << cbits) - 1)
+		elen: elen + 1
+		mix/elen: as byte! sum
+		;print-line elen
+		;dump-memory mix 1 elen / 16 + 1
 		free ehash free entropy
 		str: allocate nwords * 12
 		spos: 0
@@ -223,7 +284,7 @@ Mnemonic: context [
 			str/spos: #" "
 			pos: pos + 11
 		]
-		spos: spos + 1
+		;spos: spos + 1
 		str/spos: null-byte
 		free mix
 		from_string as c-string! str password
