@@ -1,5 +1,7 @@
 Red []
 
+#include %bip39.red
+
 #system [
 	#include %secp256k1.reds
 
@@ -240,6 +242,23 @@ secp256: context [
 
 ]
 
+eth-wallet: context [
+	init: func [
+		"create the master private key"
+		seed		[block! none!]		;-- 24-word seed, if none, create a random one
+		password	[string!]
+		return: 	[block!]			;-- return the 24-word seed
+		/local str
+	][
+		either seed [
+			str: form seed
+			Mnemonic/from_string str password
+		][
+			Mnemonic/new 'Type24Words password
+		]
+	]
+]
+
 prikey: #{1C0E092D59767F632C19994E31FD306220823D0EA427C667F59FFD4D8628FBE0}
 ;-- DER prikey: 04035143501049f1f0155fe843e85cb224fd031ea1bd17f648710c51c53e5a53dab1c43c06c2c5a00408be06b49cf24229089b86bb552b92a91890df0a7cc4c0f8
 pubkey: secp256/create-pubkey prikey
@@ -254,3 +273,16 @@ probe sig
 print secp256/verify hash sig pubkey
 
 print secp256/recover-pubkey hash sig
+
+probe eth-wallet/init none "123456"
+
+comment [
+[{point scare range clerk bridge boss faith squeeze garment weapon crush today under expand visit increase blade vague bleak vivid have trial royal wing} #{
+3A15B063A7E28D68408AD3FF123E6A346EF64099BE72B8283C2F52DFB4A097B7
+FB
+} #{
+2723568C0D9C9D864A2B1812EC4695A9BDA5A1BCA60690B696E2352E4047B850
+B735D72C2A1AE5E8E3DCB4557E7D85707BE740C2BC5BD166EDB50680835C9049
+}]
+]
+probe eth-wallet/init [point scare range clerk bridge boss faith squeeze garment weapon crush today under expand visit increase blade vague bleak vivid have trial royal wing] "123456"

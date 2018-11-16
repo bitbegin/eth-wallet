@@ -215,10 +215,3 @@ Mnemonic: context [
 		from_entropy entropy type password
 	]
 ]
-
-bip39: context [
-
-
-]
-
-probe Mnemonic/new 'Type24Words "123456"
