@@ -40,3 +40,30 @@ loop 33 [
 	print-line test-bits test-string test-string2 i
 	i: i + 1
 ]
+
+print-line "read/write 11 bits: "
+a: allocate 33
+i: 1
+loop 33 [
+	a/i: as byte! i
+	i: i + 1
+]
+
+b: as int-ptr! allocate 24 * 4
+tpos: 0
+i: 1
+loop 24 [
+	b/i: read-bits a tpos 11
+	i: i + 1
+	tpos: tpos + 11
+]
+
+c: allocate 33
+tpos: 0
+i: 1
+loop 24 [
+	write-bits c tpos 11 b/i
+	i: i + 1
+	tpos: tpos + 11
+]
+print-line either 0 = compare-memory a c 33 [true][false]
