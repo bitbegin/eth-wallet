@@ -1,12 +1,12 @@
 Red/System [
-	Title:	"bits-test"
+	Title:	"bit-access-test"
 	Author: "bitbegin"
-	File: 	%bits-test.reds
+	File: 	%bit-access-test.reds
 	Tabs: 	4
 	License: "BSD-3 - https://github.com/red/red/blob/master/BSD-3-License.txt"
 ]
 
-#include %bits.reds
+#include %bit-access.reds
 
 test-bits: func [
 	str			[c-string!]
@@ -24,8 +24,8 @@ test-bits: func [
 
 	pos: 0
 	loop 20 [
-		v: read-bits as byte-ptr! str pos bits
-		write-bits as byte-ptr! str pos bits v
+		v: bit-access/read-bits as byte-ptr! str pos bits
+		bit-access/write-bits as byte-ptr! str pos bits v
 	]
 	if 0 = compare-memory as byte-ptr! str as byte-ptr! str2 len [return true]
 	false
@@ -53,7 +53,7 @@ b: as int-ptr! allocate 24 * 4
 tpos: 0
 i: 1
 loop 24 [
-	b/i: read-bits a tpos 11
+	b/i: bit-access/read-bits a tpos 11
 	i: i + 1
 	tpos: tpos + 11
 ]
@@ -62,7 +62,7 @@ c: allocate 33
 tpos: 0
 i: 1
 loop 24 [
-	write-bits c tpos 11 b/i
+	bit-access/write-bits c tpos 11 b/i
 	i: i + 1
 	tpos: tpos + 11
 ]
