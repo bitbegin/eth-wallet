@@ -56,87 +56,82 @@ derive-seed: func [
 	pbkdf2/derive entropy salt 2048 64 'SHA512
 ]
 
-
 MnemonicType: context [
+	word-nums: 5
+	config: [
+		;type			word	ebits	cbits	tbits
+		'Type12Words	12		128		4		132
+		'Type15Words	15		160		5		165
+		'Type18Words	18		192		6		198
+		'Type21Words	21		224		7		231
+		'Type24Words	24		256		8		264
+	]
 	for_word_count: func [
 		size		[integer!]
-		return:		[word!]
+		return:		[word! none!]
+		/local i
 	][
-		case [
-			size = 12 ['Type12Words]
-			size = 15 ['Type15Words]
-			size = 18 ['Type18Words]
-			size = 21 ['Type21Words]
-			size = 24 ['Type24Words]
+		i: 2
+		loop word-nums [
+			if config/(i) = size [return config/(i - 1)]
 		]
+		none
 	]
 	for_key_size: func [
 		size		[integer!]
 		return:		[word!]
+		/local i
 	][
-		case [
-			size = 128 ['Type12Words]
-			size = 160 ['Type15Words]
-			size = 192 ['Type18Words]
-			size = 224 ['Type21Words]
-			size = 256 ['Type24Words]
+		i: 3
+		loop word-nums [
+			if config/(i) = size [return config/(i - 2)]
 		]
+		none
 	]
-	for_phrase: func [
-		str			[string!]
-		return:		[word!]
-		/local count
-	][
-		count: length? split str " "
-		for_word_count count
-	]
+
 	total_bits: func [
 		type		[word!]
-		return:		[integer!]
+		return:		[integer! none!]
+		/local i
 	][
-		case [
-			type = 'Type12Words [132]
-			type = 'Type15Words [165]
-			type = 'Type18Words [198]
-			type = 'Type21Words [231]
-			type = 'Type24Words [264]
+		i: 1
+		loop word-nums [
+			if config/(i) = type [return config/(i + 4)]
 		]
+		none
 	]
 	entropy_bits: func [
 		type		[word!]
-		return:		[integer!]
+		return:		[integer! none!]
+		/local i
 	][
-		case [
-			type = 'Type12Words [128]
-			type = 'Type15Words [160]
-			type = 'Type18Words [192]
-			type = 'Type21Words [224]
-			type = 'Type24Words [256]
+		i: 1
+		loop word-nums [
+			if config/(i) = type [return config/(i + 2)]
 		]
+		none
 	]
 	checksum_bits: func [
 		type		[word!]
-		return:		[integer!]
+		return:		[integer! none!]
+		/local i
 	][
-		case [
-			type = 'Type12Words [4]
-			type = 'Type15Words [5]
-			type = 'Type18Words [6]
-			type = 'Type21Words [7]
-			type = 'Type24Words [8]
+		i: 1
+		loop word-nums [
+			if config/(i) = type [return config/(i + 3)]
 		]
+		none
 	]
 	word_count: func [
 		type		[word!]
-		return:		[integer!]
+		return:		[integer! none!]
+		/local i
 	][
-		case [
-			type = 'Type12Words [12]
-			type = 'Type15Words [15]
-			type = 'Type18Words [18]
-			type = 'Type21Words [21]
-			type = 'Type24Words [24]
+		i: 1
+		loop word-nums [
+			if config/(i) = type [return config/(i + 1)]
 		]
+		none
 	]
 ]
 
