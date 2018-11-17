@@ -257,21 +257,21 @@ eth-wallet: context [
 	]
 ]
 
-comment [
-[{point scare range clerk bridge boss faith squeeze garment weapon crush today under expand visit increase blade vague bleak vivid have trial royal wing} #{
-3A15B063A7E28D68408AD3FF123E6A346EF64099BE72B8283C2F52DFB4A097B7
-FB
-} #{
-2723568C0D9C9D864A2B1812EC4695A9BDA5A1BCA60690B696E2352E4047B850
-B735D72C2A1AE5E8E3DCB4557E7D85707BE740C2BC5BD166EDB50680835C9049
-}]
-]
-;probe eth-wallet/init [point scare range clerk bridge boss faith squeeze garment weapon crush today under expand visit increase blade vague bleak vivid have trial royal wing] "123456"
-
-
 comment {
 	this test case from https://github.com/trezor/python-mnemonic/blob/master/vectors.json
 
+            "00000000000000000000000000000000",
+            "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+            "c55257c360c07c72029aebc1b53c05ed0362ada38ead3e3e9efa3708e53495531f09a6987599d18264c1e1c92f2cf141630c7a3c4ab7c81b2f001698e7463b04",
+			"xprv9s21ZrQH143K3h3fDYiay8mocZ3afhfULfb5GX8kCBdno77K4HiA15Tg23wpbeF1pLfs1c5SPmYHrEpTuuRhxMwvKDwqdKiGJS9XFKzUsAF"
+}
+r: eth-wallet/init [abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about] "TREZOR"
+print form r/1
+probe Mnemonic/get-binary r/2
+print r/3
+
+
+comment {
 			"f585c11aec520db57dd353c69554b21a89b20fb0650966fa0a9d6f74fd989d8f",
 			"void come effort suffer camp survey warrior heavy shoot primary clutch crush open amazing screen patrol group space point ten exist slush involve unfold",
 			"01f5bced59dec48e362f2c45b5de68b9fd6c92c6634f44d6d40aab69056506f0e35524a518034ddc1192e1dacd32c1ed3eaa3c3b131c88ed8e7e54c49a5d0998",
@@ -279,4 +279,7 @@ comment {
 }
 ;probe eth-wallet/init [beyond stage sleep clip because twist token leaf atom beauty genius food business side grid unable middle armed observe pair crouch tonight away coconut] "TREZOR"
 
-probe Mnemonic/from-entropy string-to-entropy "15da872c95a13dd738fbf50e427583ad61f18fd99f628c417a61cf8343c90419" 'Type24Words "TREZOR"
+r: Mnemonic/from-entropy string-to-entropy "15da872c95a13dd738fbf50e427583ad61f18fd99f628c417a61cf8343c90419" 'Type24Words "TREZOR"
+print form r/1
+probe Mnemonic/get-binary r/2
+print r/3

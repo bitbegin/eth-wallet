@@ -89,6 +89,19 @@ MnemonicType: context [
 		none
 	]
 
+	for_total_size: func [
+		size		[integer!]
+		return:		[word!]
+		/local i
+	][
+		i: 5
+		loop word-nums [
+			if config/(i) = size [return config/(i - 4)]
+			i: i + 5
+		]
+		none
+	]
+
 	total_bits: func [
 		type		[word!]
 		return:		[integer! none!]
@@ -168,6 +181,16 @@ entropy-to-binary: func [
 ]
 
 Mnemonic: context [
+
+	get-binary: func [
+		entropy		[string!]
+		return:		[binary!]
+		/local type ebits
+	][
+		type: MnemonicType/for_total_size length? entropy
+		ebits: MnemonicType/entropy_bits type
+		entropy-to-binary copy/part entropy ebits
+	]
 
 	words-to-entropy: func [
 		blk			[block!]
