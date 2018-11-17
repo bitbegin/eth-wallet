@@ -248,33 +248,14 @@ eth-wallet: context [
 		seed		[block! none!]		;-- 24-word seed, if none, create a random one
 		password	[string!]
 		return: 	[block!]			;-- return the 24-word seed
-		/local str
 	][
 		either seed [
-			str: form seed
-			Mnemonic/from_string str password
+			Mnemonic/from_string seed password
 		][
 			Mnemonic/new 'Type24Words password
 		]
 	]
 ]
-
-prikey: #{1C0E092D59767F632C19994E31FD306220823D0EA427C667F59FFD4D8628FBE0}
-;-- DER prikey: 04035143501049f1f0155fe843e85cb224fd031ea1bd17f648710c51c53e5a53dab1c43c06c2c5a00408be06b49cf24229089b86bb552b92a91890df0a7cc4c0f8
-pubkey: secp256/create-pubkey prikey
-print prikey
-print pubkey
-
-msg: "aaa"
-hash: checksum msg 'SHA256
-sig: secp256/sign hash prikey
-probe sig
-
-print secp256/verify hash sig pubkey
-
-print secp256/recover-pubkey hash sig
-
-probe eth-wallet/init none "123456"
 
 comment [
 [{point scare range clerk bridge boss faith squeeze garment weapon crush today under expand visit increase blade vague bleak vivid have trial royal wing} #{
@@ -286,3 +267,16 @@ B735D72C2A1AE5E8E3DCB4557E7D85707BE740C2BC5BD166EDB50680835C9049
 }]
 ]
 probe eth-wallet/init [point scare range clerk bridge boss faith squeeze garment weapon crush today under expand visit increase blade vague bleak vivid have trial royal wing] "123456"
+
+
+comment {
+	this test case from https://github.com/trezor/python-mnemonic/blob/master/vectors.json
+
+			"f585c11aec520db57dd353c69554b21a89b20fb0650966fa0a9d6f74fd989d8f",
+			"void come effort suffer camp survey warrior heavy shoot primary clutch crush open amazing screen patrol group space point ten exist slush involve unfold",
+			"01f5bced59dec48e362f2c45b5de68b9fd6c92c6634f44d6d40aab69056506f0e35524a518034ddc1192e1dacd32c1ed3eaa3c3b131c88ed8e7e54c49a5d0998",
+			"xprv9s21ZrQH143K39rnQJknpH1WEPFJrzmAqqasiDcVrNuk926oizzJDDQkdiTvNPr2FYDYzWgiMiC63YmfPAa2oPyNB23r2g7d1yiK6WpqaQS"
+}
+;probe eth-wallet/init [beyond stage sleep clip because twist token leaf atom beauty genius food business side grid unable middle armed observe pair crouch tonight away coconut] "TREZOR"
+
+probe Mnemonic/from_entropy #{15da872c95a13dd738fbf50e427583ad61f18fd99f628c417a61cf8343c90419} 'Type24Words "TREZOR"

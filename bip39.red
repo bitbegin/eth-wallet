@@ -60,11 +60,11 @@ MnemonicType: context [
 	word-nums: 5
 	config: [
 		;type			word	ebits	cbits	tbits
-		'Type12Words	12		128		4		132
-		'Type15Words	15		160		5		165
-		'Type18Words	18		192		6		198
-		'Type21Words	21		224		7		231
-		'Type24Words	24		256		8		264
+		Type12Words		12		128		4		132
+		Type15Words		15		160		5		165
+		Type18Words		18		192		6		198
+		Type21Words		21		224		7		231
+		Type24Words		24		256		8		264
 	]
 	for_word_count: func [
 		size		[integer!]
@@ -74,6 +74,7 @@ MnemonicType: context [
 		i: 2
 		loop word-nums [
 			if config/(i) = size [return config/(i - 1)]
+			i: i + 5
 		]
 		none
 	]
@@ -85,6 +86,7 @@ MnemonicType: context [
 		i: 3
 		loop word-nums [
 			if config/(i) = size [return config/(i - 2)]
+			i: i + 5
 		]
 		none
 	]
@@ -97,6 +99,7 @@ MnemonicType: context [
 		i: 1
 		loop word-nums [
 			if config/(i) = type [return config/(i + 4)]
+			i: i + 5
 		]
 		none
 	]
@@ -108,6 +111,7 @@ MnemonicType: context [
 		i: 1
 		loop word-nums [
 			if config/(i) = type [return config/(i + 2)]
+			i: i + 5
 		]
 		none
 	]
@@ -119,6 +123,7 @@ MnemonicType: context [
 		i: 1
 		loop word-nums [
 			if config/(i) = type [return config/(i + 3)]
+			i: i + 5
 		]
 		none
 	]
@@ -130,6 +135,7 @@ MnemonicType: context [
 		i: 1
 		loop word-nums [
 			if config/(i) = type [return config/(i + 1)]
+			i: i + 5
 		]
 		none
 	]
@@ -137,19 +143,18 @@ MnemonicType: context [
 
 Mnemonic: context [
 	from_string_entropy: func [
-		str			[string!]
+		blk			[block!]
 		return:		[binary!]
-		/local words num type ebits cbits entropy elen epos w raw ehash
+		/local num type ebits cbits entropy elen epos w raw ehash
 	][
-		words: split str " "
-		num: length? words
+		num: length? blk
 		type: MnemonicType/for_word_count num
 		ebits: MnemonicType/entropy_bits type
 		cbits: MnemonicType/checksum_bits type
 		elen: ebits / 8
 		entropy: make binary! elen + 1
 		epos: 0
-		foreach w words [
+		foreach w blk [
 			bit-access/write-bits entropy epos 11 (word-list/get-index to word! w) - 1
 			epos: epos + 11
 		]
@@ -162,22 +167,22 @@ Mnemonic: context [
 	]
 
 	from_string: func [
-		str			[string!]
+		blk			[block!]
 		password	[string!]
-		return:		[block!]		;-- [string entropy seed]
+		return:		[block!]		;-- [words entropy seed]
 		/local seed entropy
 	][
-		entropy: from_string_entropy str
-		seed: derive-seed str password
-		reduce [str entropy seed]
+		entropy: from_string_entropy blk
+		seed: derive-seed form blk password
+		reduce [blk entropy seed]
 	]
 
 	from_entropy: func [
 		entropy		[binary!]
 		type		[word!]
 		password	[string!]
-		return:		[block!]		;-- [string entropy seed]
-		/local elen cbits nwords ehash str vl epos
+		return:		[block!]		;-- [words entropy seed]
+		/local elen cbits nwords ehash blk vl epos
 	][
 		elen: length? entropy
 		if (elen * 8) <> MnemonicType/entropy_bits type [
@@ -187,22 +192,20 @@ Mnemonic: context [
 		nwords: MnemonicType/word_count type
 		ehash: checksum entropy 'SHA256
 		append entropy ehash/1 and (1 << cbits - 1)
-		str: make string! nwords * 12
+		blk: make block! nwords
 		epos: 0
 		loop nwords [
 			vl: 1 + bit-access/read-bits entropy epos 11
-			append str to string! word-list/get-word vl
-			append str " "
+			append blk word-list/get-word vl
 			epos: epos + 11
 		]
-		remove back tail str
-		from_string str password
+		from_string blk password
 	]
 
 	new: func [
 		type		[word!]
 		password	[string!]
-		return:		[block!]		;-- [string entropy seed]
+		return:		[block!]		;-- [words entropy seed]
 		/local elen entropy
 	][
 		elen: (MnemonicType/entropy_bits type) / 8
