@@ -247,10 +247,10 @@ eth-wallet: context [
 		"create the master private key"
 		seed		[block! none!]		;-- 24-word seed, if none, create a random one
 		password	[string!]
-		return: 	[block!]			;-- return the 24-word seed
+		return: 	[block!]			;-- return [words entropy seed]
 	][
 		either seed [
-			Mnemonic/from_string seed password
+			Mnemonic/from-words seed password
 		][
 			Mnemonic/new 'Type24Words password
 		]
@@ -266,7 +266,7 @@ FB
 B735D72C2A1AE5E8E3DCB4557E7D85707BE740C2BC5BD166EDB50680835C9049
 }]
 ]
-probe eth-wallet/init [point scare range clerk bridge boss faith squeeze garment weapon crush today under expand visit increase blade vague bleak vivid have trial royal wing] "123456"
+;probe eth-wallet/init [point scare range clerk bridge boss faith squeeze garment weapon crush today under expand visit increase blade vague bleak vivid have trial royal wing] "123456"
 
 
 comment {
@@ -279,4 +279,4 @@ comment {
 }
 ;probe eth-wallet/init [beyond stage sleep clip because twist token leaf atom beauty genius food business side grid unable middle armed observe pair crouch tonight away coconut] "TREZOR"
 
-probe Mnemonic/from_entropy #{15da872c95a13dd738fbf50e427583ad61f18fd99f628c417a61cf8343c90419} 'Type24Words "TREZOR"
+probe Mnemonic/from-entropy string-to-entropy "15da872c95a13dd738fbf50e427583ad61f18fd99f628c417a61cf8343c90419" 'Type24Words "TREZOR"

@@ -7,7 +7,6 @@ Red [
 ]
 
 #include %pbkdf2.red
-#include %bit-access.red
 
 urandom: routine [
 	len			[integer!]
@@ -29,7 +28,7 @@ word-list: context [
 		return:		[integer! none!]
 		/local f
 	][
-		if f: find BIP39_WORDLIST_ENGLISH word [return index? f]
+		if f: find BIP39_WORDLIST_ENGLISH word [return (index? f) - 1]
 		none
 	]
 	get-word: func [
@@ -37,11 +36,10 @@ word-list: context [
 		return:		[word! none!]
 	][
 		if any [
-			index = 0
 			index < 0
-			index > word-nums
+			index >= word-nums
 		][none]
-		pick BIP39_WORDLIST_ENGLISH index
+		pick BIP39_WORDLIST_ENGLISH index + 1
 	]
 ]
 
@@ -141,75 +139,106 @@ MnemonicType: context [
 	]
 ]
 
+string-to-entropy: func [
+	str			[string!]
+	return:		[string!]
+][
+	enbase/base debase/base str 16 2
+]
+
+binary-to-entropy: func [
+	bin			[binary!]
+	return:		[string!]
+][
+	enbase/base bin 2
+]
+
+entropy-to-string: func [
+	entropy		[string!]
+	return:		[string!]
+][
+	enbase/base debase/base entropy 2 16
+]
+
+entropy-to-binary: func [
+	entropy		[string!]
+	return:		[binary!]
+][
+	debase/base entropy 2
+]
+
 Mnemonic: context [
-	from_string_entropy: func [
+
+	words-to-entropy: func [
 		blk			[block!]
-		return:		[binary!]
-		/local num type ebits cbits entropy elen epos w raw ehash
+		return:		[string!]
+		/local num type ebits cbits entropy elen epos w vl raw ehash rhash
 	][
 		num: length? blk
 		type: MnemonicType/for_word_count num
 		ebits: MnemonicType/entropy_bits type
 		cbits: MnemonicType/checksum_bits type
 		elen: ebits / 8
-		entropy: make binary! elen + 1
-		epos: 0
+		entropy: make string! ebits + cbits
 		foreach w blk [
-			bit-access/write-bits entropy epos 11 (word-list/get-index to word! w) - 1
-			epos: epos + 11
+			;bit-access/write-bits entropy epos 11 (word-list/get-index to word! w) - 1
+			vl: skip binary-to-entropy to binary! word-list/get-index w 21
+			append entropy vl
 		]
-		raw: copy/part entropy elen
-		ehash: checksum raw 'SHA256
-		if (pick entropy elen + 1) <> (ehash/1 and (1 << cbits - 1)) [
+		raw: entropy-to-binary copy/part entropy ebits
+		rhash: copy/part skip entropy ebits cbits
+		ehash: copy/part binary-to-entropy checksum raw 'SHA256 cbits
+		if rhash <> ehash [
 			return make error! "invalid entropy!"
 		]
 		entropy
 	]
 
-	from_string: func [
+	from-words: func [
 		blk			[block!]
 		password	[string!]
 		return:		[block!]		;-- [words entropy seed]
 		/local seed entropy
 	][
-		entropy: from_string_entropy blk
+		entropy: words-to-entropy blk
 		seed: derive-seed form blk password
 		reduce [blk entropy seed]
 	]
 
-	from_entropy: func [
-		entropy		[binary!]
+	from-entropy: func [
+		entropy		[string!]
 		type		[word!]
 		password	[string!]
 		return:		[block!]		;-- [words entropy seed]
-		/local elen cbits nwords ehash blk vl epos
+		/local cbits nwords bentropy ehash blk vl
 	][
-		elen: length? entropy
-		if (elen * 8) <> MnemonicType/entropy_bits type [
+		if (length? entropy) <> MnemonicType/entropy_bits type [
 			return make error! "invalid type!"
 		]
 		cbits: MnemonicType/checksum_bits type
 		nwords: MnemonicType/word_count type
-		ehash: checksum entropy 'SHA256
-		append entropy ehash/1 and (1 << cbits - 1)
+		bentropy: entropy-to-binary entropy
+		ehash: binary-to-entropy checksum bentropy 'SHA256
+		append/part entropy ehash cbits
 		blk: make block! nwords
-		epos: 0
 		loop nwords [
-			vl: 1 + bit-access/read-bits entropy epos 11
+			insert/dup vl: copy/part entropy 11 "0" 5
+			vl: to integer! entropy-to-binary vl
 			append blk word-list/get-word vl
-			epos: epos + 11
+			entropy: skip entropy 11
 		]
-		from_string blk password
+		from-words blk password
 	]
 
 	new: func [
 		type		[word!]
 		password	[string!]
 		return:		[block!]		;-- [words entropy seed]
-		/local elen entropy
+		/local elen bentropy entropy
 	][
 		elen: (MnemonicType/entropy_bits type) / 8
-		entropy: urandom elen
-		from_entropy entropy type password
+		bentropy: urandom elen
+		entropy: binary-to-entropy bentropy
+		from-entropy entropy type password
 	]
 ]
