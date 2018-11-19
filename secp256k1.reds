@@ -42,7 +42,7 @@ Red/System []
 		secp256k1_ec_pubkey_serialize: "secp256k1_ec_pubkey_serialize" [
 			ctx				[integer!]
 			output			[byte-ptr!]
-			outputlen		[integer!]
+			outputlen		[int-ptr!]
 			pubkey64		[byte-ptr!]
 			flags			[integer!]
 			return:			[integer!]
