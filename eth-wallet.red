@@ -279,7 +279,7 @@ comment {
 }
 ;probe eth-wallet/init [beyond stage sleep clip because twist token leaf atom beauty genius food business side grid unable middle armed observe pair crouch tonight away coconut] "TREZOR"
 
-r: Mnemonic/from-entropy string-to-entropy "15da872c95a13dd738fbf50e427583ad61f18fd99f628c417a61cf8343c90419" 'Type24Words "TREZOR"
+r: Mnemonic/from-entropy string-to-entropy "f585c11aec520db57dd353c69554b21a89b20fb0650966fa0a9d6f74fd989d8f" "TREZOR"
 print form r/1
 probe Mnemonic/get-binary r/2
 print r/3

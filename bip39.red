@@ -78,7 +78,7 @@ MnemonicType: context [
 	]
 	for_key_size: func [
 		size		[integer!]
-		return:		[word!]
+		return:		[word! none!]
 		/local i
 	][
 		i: 3
@@ -91,7 +91,7 @@ MnemonicType: context [
 
 	for_total_size: func [
 		size		[integer!]
-		return:		[word!]
+		return:		[word! none!]
 		/local i
 	][
 		i: 5
@@ -182,11 +182,26 @@ entropy-to-binary: func [
 
 Mnemonic: context [
 
+	entropy-valid?: func [
+		entropy		[string!]
+		return:		[logic!]
+		/local type ebits cbits raw ehash rhash
+	][
+		type: MnemonicType/for_total_size length? entropy
+		ebits: MnemonicType/entropy_bits type
+		cbits: MnemonicType/checksum_bits type
+		raw: entropy-to-binary copy/part entropy ebits
+		rhash: copy/part skip entropy ebits cbits
+		ehash: copy/part binary-to-entropy checksum raw 'SHA256 cbits
+		rhash = ehash
+	]
+
 	get-binary: func [
 		entropy		[string!]
 		return:		[binary!]
 		/local type ebits
 	][
+		if not entropy-valid? entropy [cause-error 'user 'message "invalid entropy!"]
 		type: MnemonicType/for_total_size length? entropy
 		ebits: MnemonicType/entropy_bits type
 		entropy-to-binary copy/part entropy ebits
@@ -195,10 +210,12 @@ Mnemonic: context [
 	words-to-entropy: func [
 		blk			[block!]
 		return:		[string!]
-		/local num type ebits cbits entropy elen epos w vl raw ehash rhash
+		/local num type ebits cbits entropy elen epos w vl
 	][
 		num: length? blk
-		type: MnemonicType/for_word_count num
+		if none = type: MnemonicType/for_word_count num [
+			cause-error 'user 'message "invalid type!"
+		]
 		ebits: MnemonicType/entropy_bits type
 		cbits: MnemonicType/checksum_bits type
 		elen: ebits / 8
@@ -208,12 +225,7 @@ Mnemonic: context [
 			vl: skip binary-to-entropy to binary! word-list/get-index w 21
 			append entropy vl
 		]
-		raw: entropy-to-binary copy/part entropy ebits
-		rhash: copy/part skip entropy ebits cbits
-		ehash: copy/part binary-to-entropy checksum raw 'SHA256 cbits
-		if rhash <> ehash [
-			return make error! "invalid entropy!"
-		]
+		if not entropy-valid? entropy [cause-error 'user 'message "invalid entropy!"]
 		entropy
 	]
 
@@ -230,18 +242,17 @@ Mnemonic: context [
 
 	from-entropy: func [
 		entropy		[string!]
-		type		[word!]
 		password	[string!]
 		return:		[block!]		;-- [words entropy seed]
-		/local cbits nwords bentropy ehash blk vl
+		/local type cbits nwords bin ehash blk vl
 	][
-		if (length? entropy) <> MnemonicType/entropy_bits type [
-			return make error! "invalid type!"
+		if none = type: MnemonicType/for_key_size length? entropy [
+			cause-error 'user 'message "invalid type!"
 		]
 		cbits: MnemonicType/checksum_bits type
 		nwords: MnemonicType/word_count type
-		bentropy: entropy-to-binary entropy
-		ehash: binary-to-entropy checksum bentropy 'SHA256
+		bin: entropy-to-binary entropy
+		ehash: binary-to-entropy checksum bin 'SHA256
 		append/part entropy ehash cbits
 		blk: make block! nwords
 		loop nwords [
@@ -257,11 +268,11 @@ Mnemonic: context [
 		type		[word!]
 		password	[string!]
 		return:		[block!]		;-- [words entropy seed]
-		/local elen bentropy entropy
+		/local elen bin entropy
 	][
 		elen: (MnemonicType/entropy_bits type) / 8
-		bentropy: urandom elen
-		entropy: binary-to-entropy bentropy
-		from-entropy entropy type password
+		bin: urandom elen
+		entropy: binary-to-entropy bin
+		from-entropy entropy password
 	]
 ]
