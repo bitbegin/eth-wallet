@@ -161,27 +161,6 @@ secp256: context [
 		free pubkey
 	]
 
-	_serialize-pubkey: routine [
-		pubkey		[binary!]
-		compress?	[logic!]
-		/local
-			klen	[integer!]
-			key		[byte-ptr!]
-			data	[byte-ptr!]
-			dlen	[integer!]
-	][
-		klen: binary/rs-length? pubkey
-		if klen <> 64 [
-			fire [TO_ERROR(script invalid-arg)	pubkey]
-		]
-		key: binary/rs-head pubkey
-		data: allocate 65
-		dlen: 0
-		secp256k1_ec_pubkey_serialize secp256/ctx data :dlen key either compress? [SECP256K1_EC_COMPRESSED][SECP256K1_EC_UNCOMPRESSED]
-		stack/set-last as red-value! binary/load data dlen
-		free data
-	]
-
 	;-- api
 
 	create-keypair: func [
@@ -265,11 +244,39 @@ secp256: context [
 		_recover-pubkey hash sig
 	]
 
-	serialize-pubkey: func [
-		public-key		[binary!]
-		compress?		[logic!]
-		return:			[binary!]
+	serialize-pubkey: routine [
+		pubkey		[binary!]
+		compress?	[logic!]
+		/local
+			klen	[integer!]
+			key		[byte-ptr!]
+			data	[byte-ptr!]
+			dlen	[integer!]
 	][
-		_serialize-pubkey public-key compress?
+		klen: binary/rs-length? pubkey
+		if klen <> 64 [
+			fire [TO_ERROR(script invalid-arg)	pubkey]
+		]
+		key: binary/rs-head pubkey
+		data: allocate 65
+		dlen: 0
+		secp256k1_ec_pubkey_serialize secp256/ctx data :dlen key either compress? [SECP256K1_EC_COMPRESSED][SECP256K1_EC_UNCOMPRESSED]
+		stack/set-last as red-value! binary/load data dlen
+		free data
+	]
+
+	prikey-valid?: func [
+		private-key [binary!]
+		return:		[logic!]
+		/local
+			klen	[integer!]
+			key		[byte-ptr!]
+	][
+		klen: binary/rs-length? private-key
+		if klen <> 32 [
+			fire [TO_ERROR(script invalid-arg)	private-key]
+		]
+		key: binary/rs-head private-key
+		1 = secp256k1_ec_seckey_verify secp256/ctx key
 	]
 ]
