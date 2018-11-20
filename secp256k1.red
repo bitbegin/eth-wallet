@@ -265,7 +265,7 @@ secp256: context [
 		free data
 	]
 
-	prikey-valid?: func [
+	prikey-valid?: routine [
 		private-key [binary!]
 		return:		[logic!]
 		/local
