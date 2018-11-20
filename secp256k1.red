@@ -279,4 +279,34 @@ secp256: context [
 		key: binary/rs-head private-key
 		1 = secp256k1_ec_seckey_verify secp256/ctx key
 	]
+
+	privkey-tweak-add: routine [
+		private-key	[binary!]
+		tweek		[binary!]
+		/local
+			klen	[integer!]
+			key		[byte-ptr!]
+			dlen	[integer!]
+			data	[byte-ptr!]
+			nkey	[byte-ptr!]
+	][
+		klen: binary/rs-length? private-key
+		if klen <> 32 [
+			fire [TO_ERROR(script invalid-arg)	private-key]
+		]
+		key: binary/rs-head private-key
+		dlen: binary/rs-length? tweek
+		if dlen <> 32 [
+			fire [TO_ERROR(script invalid-arg)	tweek]
+		]
+		data: binary/rs-head tweek
+		nkey: allocate 32 copy-memory nkey key 32
+		if 0 = secp256k1_ec_privkey_tweak_add secp256/ctx nkey data [
+			stack/set-last none-value
+			free nkey
+			exit
+		]
+		stack/set-last as red-value! binary/load nkey 32
+		free nkey
+	]
 ]
