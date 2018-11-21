@@ -23,13 +23,6 @@ bip32key: context [
 		reduce [Il Ir]
 	]
 
-	from-entropy: func [
-		entropy		[string!]
-		return:		[block! none!]	"[Il Ir] or none"
-	][
-		from-binary Mnemonic/get-binary entropy
-	]
-
 	CKD-priv: func [
 		kpar		[binary!]
 		cpar		[binary!]
@@ -105,17 +98,6 @@ bip32key: context [
 	]
 
 	derive: func [
-		entropy		[string!]
-		path		[block!]
-		private?	[logic!]
-		return:		[block!]		"[private? depth fpr index chain key]"
-		/local blk
-	][
-		blk: from-entropy entropy
-		derive-key blk/1 blk/2 path 0 private?
-	]
-
-	derive-bin: func [
 		bin			[binary!]
 		path		[block!]
 		private?	[logic!]

@@ -41,7 +41,7 @@ eth-wallet: context [
 		][
 			path: append copy bip32-path idx
 		]
-		pub: bip32key/derive private-key/2 path false
+		pub: bip32key/derive private-key/3 path false
 		pub/6
 	]
 ]
@@ -49,3 +49,6 @@ eth-wallet: context [
 eth-wallet/init [abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about] "TREZOR"
 clear eth-wallet/bip32-path
 print eth-wallet/get-address none
+
+probe bip32key/encode bip32key/derive eth-wallet/private-key/3 [] true
+probe bip32key/encode bip32key/derive eth-wallet/private-key/3 [] false
