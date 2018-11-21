@@ -252,6 +252,7 @@ secp256: context [
 			key		[byte-ptr!]
 			data	[byte-ptr!]
 			dlen	[integer!]
+			flags	[integer!]
 	][
 		klen: binary/rs-length? pubkey
 		if klen <> 64 [
@@ -259,8 +260,14 @@ secp256: context [
 		]
 		key: binary/rs-head pubkey
 		data: allocate 65
-		dlen: 0
-		if 1 <> secp256k1_ec_pubkey_serialize secp256/ctx data :dlen key either compress? [SECP256K1_EC_COMPRESSED][SECP256K1_EC_UNCOMPRESSED][
+		either compress? [
+			flags: SECP256K1_EC_COMPRESSED
+			dlen: 33
+		][
+			flags: SECP256K1_EC_UNCOMPRESSED
+			dlen: 65
+		]
+		if 1 <> secp256k1_ec_pubkey_serialize secp256/ctx data :dlen key flags [
 			stack/set-last none-value
 			free data
 			exit

@@ -86,18 +86,20 @@ bip32key: context [
 		/local bin
 	][
 		bin: make binary! 78
-		enbase/base repend bin [
+		repend bin [
 			to binary! select bip32-addr/prefix
 				either data/1 ['BIP32-PRIKEY]['BIP32-PUBKEY]
 			to binary! to char! data/2
 			to binary! data/3
 			to binary! data/4
 			data/5
-			if data/1 [#{00}]
-			either data/1 [data/6][
+			either data/1 [
+				append copy #{00} data/6
+			][
 				secp256/serialize-pubkey data/6 true
 			]
-		] 58
+		]
+		bip32-addr/encode58-check bin
 	]
 
 	decode: func [
@@ -129,3 +131,9 @@ bip32key: context [
 ;probe priv: bip32key/decode "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi"
 ;probe pub: bip32key/decode "xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8"
 ;probe secp256/create-pubkey priv/6
+
+bin-entropy: #{000102030405060708090a0b0c0d0e0f}
+seeds: Mnemonic/from-binary bin-entropy "123456"
+master: bip32key/from-entropy seeds/2
+probe bip32key/encode reduce [true 0 0 0 master/2 master/1]
+probe bip32key/encode reduce [false 0 0 0 master/2 secp256/create-pubkey master/1]
