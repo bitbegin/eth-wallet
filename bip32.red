@@ -58,7 +58,7 @@ bip32key: context [
 		return:		[block! none!]	"[child Ir] or none"
 		/local data pub I Il Ir pub2 child
 	][
-		if i < 0 [do make error! "hardened child!"]
+		if index < 0 [do make error! "hardened child!"]
 		data: make binary! 33 + 4
 		pub: secp256/serialize-pubkey kpar true
 		repend data [pub to binary! index]
@@ -83,16 +83,15 @@ bip32key: context [
 		key			[binary!]
 		chain		[binary!]
 		path		[block!]
+		depth		[integer!]
 		private?	[logic!]
 		return:		[block!]		"[private? depth fpr index chain key]"
-		/local len depth fpr index blk okey
+		/local len fpr index blk okey
 	][
-		len: length? path
-		if len = 0 [
+		if 0 = len: length? path [
 			unless private? [key: secp256/create-pubkey key]
 			return reduce [private? 0 0 0 chain key]
 		]
-		depth: 0
 		foreach index path [
 			unless integer? index [do make error! "invalid index"]
 			depth: depth + 1
@@ -113,7 +112,7 @@ bip32key: context [
 		/local blk
 	][
 		blk: from-entropy entropy
-		derive-key blk/1 blk/2 path private?
+		derive-key blk/1 blk/2 path 0 private?
 	]
 
 	derive-bin: func [
@@ -124,7 +123,32 @@ bip32key: context [
 		/local blk
 	][
 		blk: from-binary bin
-		derive-key blk/1 blk/2 path private?
+		derive-key blk/1 blk/2 path 0 private?
+	]
+
+	derive-extkey: func [
+		data		[block!]		"[private? depth fpr index chain key]"
+		path		[block!]
+		rprivate?	[logic!]
+		return:		[block!]		"[private? depth fpr index chain key]"
+		/local len private? depth index blk okey key chain
+	][
+		if 0 = len: length? path [
+			return data
+		]
+		private?: data/1 depth: data/2 chain: data/5 key: data/6
+		if private? [
+			return derive-key key chain path depth rprivate?
+		]
+		if rprivate? [do make error! "can't derive private key"]
+		foreach index path [
+			unless integer? index [do make error! "invalid index"]
+			depth: depth + 1
+			blk: CKD-pub key chain index
+			okey: key
+			key: blk/1 chain: blk/2
+		]
+		reduce [false depth finger-print okey index chain key]
 	]
 
 	encode: func [
@@ -215,3 +239,10 @@ probe bip32key/encode bip32key/derive seeds/2 [80000000h 1 80000002h 2 100000000
 probe bip32key/encode bip32key/derive seeds/2 [80000000h 1 80000002h 2 1000000000] false
 probe bip32key/encode bip32key/derive-bin bin-entropy [80000000h 1 80000002h 2 1000000000] true
 probe bip32key/encode bip32key/derive-bin bin-entropy [80000000h 1 80000002h 2 1000000000] false
+
+print ["ext pubkey: " 1000000000]
+probe bip32key/encode bip32key/derive-extkey bip32key/decode "xpub6FHa3pjLCk84BayeJxFW2SP4XRrFd1JYnxeLeU8EqN3vDfZmbqBqaGJAyiLjTAwm6ZLRQUMv1ZACTj37sR62cfN7fe5JnJ7dh8zL4fiyLHV" [1000000000] false
+print ["ext privkey: " 1000000000]
+probe bip32key/encode bip32key/derive-extkey bip32key/decode "xprvA2JDeKCSNNZky6uBCviVfJSKyQ1mDYahRjijr5idH2WwLsEd4Hsb2Tyh8RfQMuPh7f7RtyzTtdrbdqqsunu5Mm3wDvUAKRHSC34sJ7in334" [1000000000] false
+print ["ext privkey: " 1000000000]
+probe bip32key/encode bip32key/derive-extkey bip32key/decode "xprvA2JDeKCSNNZky6uBCviVfJSKyQ1mDYahRjijr5idH2WwLsEd4Hsb2Tyh8RfQMuPh7f7RtyzTtdrbdqqsunu5Mm3wDvUAKRHSC34sJ7in334" [1000000000] true
