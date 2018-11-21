@@ -309,4 +309,42 @@ secp256: context [
 		stack/set-last as red-value! binary/load nkey 32
 		free nkey
 	]
+	pubkey-combine: routine [
+		keys		[block!]
+		/local
+			len		[integer!]
+			ptr		[int-ptr!]
+			key		[red-value!]
+			p		[int-ptr!]
+			data	[byte-ptr!]
+	][
+		len: block/rs-length? keys
+		if len <= 1 [stack/set-last as red-value! keys exit]
+		ptr: as int-ptr! allocate 4 * len
+		p: ptr
+		key: block/rs-head keys
+		loop len [
+			if any [
+				TYPE_OF(key) <> TYPE_BINARY [
+				64 <> binary/rs-length? key
+			]
+				stack/set-last none-value
+				free as byte-ptr! ptr
+				exit
+			]
+			p/1: binary/rs-head key
+			key: key + 1
+			p: p + 1
+		]
+		data: allocate 64
+		if 0 = secp256k1_ec_pubkey_combine secp256/ctx data ptr len [
+			stack/set-last none-value
+			free data
+			free as byte-ptr! ptr
+			exit
+		]
+		stack/set-last as red-value! binary/load data 64
+		free data
+		free as byte-ptr! ptr
+	]
 ]

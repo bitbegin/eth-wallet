@@ -30,7 +30,7 @@ bip32key: context [
 		cpar		[binary!]
 		index		[integer!]
 		return:		[block! none!]
-		/local data pub I Il Ir priv
+		/local data pub I Il Ir child
 	][
 		data: make binary! 1 + 32 + 4
 		either index < 0 [
@@ -42,7 +42,25 @@ bip32key: context [
 		I: checksum/with data 'SHA512 cpar
 		if not secp256/prikey-valid? Il: copy/part I 32 [return none]
 		Ir: copy/part skip I 32 32
-		if none? priv: secp256/privkey-tweak-add kpar Il [return none]
-		reduce [priv Ir]
+		if none? child: secp256/privkey-tweak-add kpar Il [return none]
+		reduce [child Ir]
+	]
+
+	CKD-pub: func [
+		kpar		[binary!]
+		cpar		[binary!]
+		index		[integer!]
+		return:		[block! none!]
+		/local data pub I Il Ir pub2 child
+	][
+		if i < 0 [cause-error 'user 'message "hardened child!"]
+		pub: secp256/serialize-pubkey kpar true
+		data: reduce [pub to binary! index]
+		I: checksum/with data 'SHA512 cpar
+		if not secp256/prikey-valid? Il: copy/part I 32 [return none]
+		Ir: copy/part skip I 32 32
+		pub2: secp256/create-pubkey Tl
+		child: secp256/pubkey-combine reduce [pub2 kpar]
+		reduce [child Ir]
 	]
 ]

@@ -145,6 +145,13 @@ Red/System []
 			seed32			[byte-ptr!]
 			return:			[integer!]
 		]
+		secp256k1_ec_pubkey_combine: "secp256k1_ec_pubkey_combine" [
+			ctx				[integer!]
+			output64		[byte-ptr!]
+			ins				[int-ptr!]
+			n				[integer!]
+			return:			[integer!]
+		]
 
 		secp256k1_ecdsa_recoverable_signature_parse_compact: "secp256k1_ecdsa_recoverable_signature_parse_compact" [
 			ctx				[integer!]
