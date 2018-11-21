@@ -264,15 +264,21 @@ Mnemonic: context [
 		from-words blk password
 	]
 
+	from-binary: func [
+		bin			[binary!]
+		password	[string!]
+		return:		[block!]		;-- [words entropy seed]
+	][
+		from-entropy binary-to-entropy bin password
+	]
+
 	new: func [
 		type		[word!]
 		password	[string!]
 		return:		[block!]		;-- [words entropy seed]
-		/local elen bin entropy
+		/local elen
 	][
 		elen: (MnemonicType/entropy_bits type) / 8
-		bin: urandom elen
-		entropy: binary-to-entropy bin
-		from-entropy entropy password
+		from-binary urandom elen password
 	]
 ]

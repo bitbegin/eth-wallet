@@ -260,8 +260,31 @@ secp256: context [
 		key: binary/rs-head pubkey
 		data: allocate 65
 		dlen: 0
-		secp256k1_ec_pubkey_serialize secp256/ctx data :dlen key either compress? [SECP256K1_EC_COMPRESSED][SECP256K1_EC_UNCOMPRESSED]
+		if 1 <> secp256k1_ec_pubkey_serialize secp256/ctx data :dlen key either compress? [SECP256K1_EC_COMPRESSED][SECP256K1_EC_UNCOMPRESSED][
+			stack/set-last none-value
+			free data
+			exit
+		]
 		stack/set-last as red-value! binary/load data dlen
+		free data
+	]
+
+	parse-pubkey: routine [
+		pubkey		[binary!]
+		/local
+			klen	[integer!]
+			key		[byte-ptr!]
+			data	[byte-ptr!]
+	][
+		klen: binary/rs-length? pubkey
+		key: binary/rs-head pubkey
+		data: allocate 64
+		if 1 <> secp256k1_ec_pubkey_parse secp256/ctx data key klen [
+			stack/set-last none-value
+			free data
+			exit
+		]
+		stack/set-last as red-value! binary/load data 64
 		free data
 	]
 
@@ -314,7 +337,7 @@ secp256: context [
 		/local
 			len		[integer!]
 			ptr		[int-ptr!]
-			key		[red-value!]
+			key		[red-binary!]
 			p		[int-ptr!]
 			data	[byte-ptr!]
 	][
@@ -322,17 +345,17 @@ secp256: context [
 		if len <= 1 [stack/set-last as red-value! keys exit]
 		ptr: as int-ptr! allocate 4 * len
 		p: ptr
-		key: block/rs-head keys
+		key: as red-binary! block/rs-head keys
 		loop len [
 			if any [
-				TYPE_OF(key) <> TYPE_BINARY [
+				TYPE_OF(key) <> TYPE_BINARY
 				64 <> binary/rs-length? key
-			]
+			][
 				stack/set-last none-value
 				free as byte-ptr! ptr
 				exit
 			]
-			p/1: binary/rs-head key
+			p/1: as integer! binary/rs-head key
 			key: key + 1
 			p: p + 1
 		]

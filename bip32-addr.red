@@ -27,6 +27,18 @@ bip32-addr: context [
 		enbase/base data 58
 	]
 
+	decode58-check: func [data [string!] return: [binary!]
+		/local bin len raw hash hash2
+	][
+		bin: debase/base data 58
+		if 4 >= len: length? bin [do make error! "invalid string!"]
+		raw: copy/part bin len - 4
+		hash: copy/part skip bin len - 4 4
+		hash2: copy/part checksum checksum raw 'sha256 'sha256 4
+		if hash <> hash2 [do make error! "invalid string!"]
+		raw
+	]
+
 	hash160: func [pubkey [binary!] return: [binary!]][
 		ripemd160 checksum pubkey 'sha256
 	]
