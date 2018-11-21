@@ -12,16 +12,22 @@ Red [
 
 bip32key: context [
 
-	from-entropy: func [
-		entropy		[string!]
+	from-binary: func [
+		bin			[binary!]
 		return:		[block! none!]	"[Il Ir] or none"
 		/local I Il Ir
 	][
-		if not Mnemonic/entropy-valid? entropy [do make error! "invalid entropy!"]
-		I: checksum/with Mnemonic/get-binary entropy 'SHA512 "Bitcoin seed"
+		I: checksum/with bin 'SHA512 "Bitcoin seed"
 		if not secp256/prikey-valid? Il: copy/part I 32 [return none]
 		Ir: copy/part skip I 32 32
 		reduce [Il Ir]
+	]
+
+	from-entropy: func [
+		entropy		[string!]
+		return:		[block! none!]	"[Il Ir] or none"
+	][
+		from-binary Mnemonic/get-binary entropy
 	]
 
 	CKD-priv: func [
@@ -33,10 +39,10 @@ bip32key: context [
 	][
 		data: make binary! 1 + 32 + 4
 		either index < 0 [
-			data: reduce [#{00} kpar to binary! index]
+			repend data [#{00} kpar to binary! index]
 		][
 			pub: secp256/serialize-pubkey secp256/create-pubkey kpar true
-			data: reduce [pub to binary! index]
+			repend data [pub to binary! index]
 		]
 		I: checksum/with data 'SHA512 cpar
 		if not secp256/prikey-valid? Il: copy/part I 32 [return none]
@@ -53,8 +59,9 @@ bip32key: context [
 		/local data pub I Il Ir pub2 child
 	][
 		if i < 0 [do make error! "hardened child!"]
+		data: make binary! 33 + 4
 		pub: secp256/serialize-pubkey kpar true
-		data: reduce [pub to binary! index]
+		repend data [pub to binary! index]
 		I: checksum/with data 'SHA512 cpar
 		if not secp256/prikey-valid? Il: copy/part I 32 [return none]
 		Ir: copy/part skip I 32 32
@@ -63,21 +70,63 @@ bip32key: context [
 		reduce [child Ir]
 	]
 
-	derive-priv: func [
-		entropy		[string!]
-		path		[block!]
-		return:		[block!]	;-- [private? depth fpr index chain key]
-		/local master len depth fpr index
+	finger-print: func [
+		pubkey		[binary!]
+		return:		[integer!]
+		/local hash
 	][
-		master: from-entropy entropy
+		hash: bip32-addr/hash160 secp256/serialize-pubkey pubkey true
+		to integer! copy/part hash 4
+	]
+
+	derive-key: func [
+		mkey		[binary!]
+		mchain		[binary!]
+		path		[block!]
+		private?	[logic!]
+		return:		[block!]		"[private? depth fpr index chain key]"
+		/local key chain len depth fpr index blk okey
+	][
+		key: mkey
+		chain: mchain
 		len: length? path
 		if len = 0 [
-			return reduce [0 0 0 master/2 master/1]
+			unless private? [key: secp256/create-pubkey key]
+			return reduce [private? 0 0 0 chain key]
 		]
-		depth: 0 fpr: 0 index: 0
-		loop len [
+		depth: 0
+		foreach index path [
+			unless integer? index [do make error! "invalid index"]
+			depth: depth + 1
+			blk: CKD-priv key chain index
+			okey: key
+			key: blk/1 chain: blk/2
+		]
+		fpr: finger-print secp256/create-pubkey okey
+		unless private? [key: secp256/create-pubkey key]
+		reduce [private? depth fpr index chain key]
+	]
 
-		]
+	derive: func [
+		entropy		[string!]
+		path		[block!]
+		private?	[logic!]
+		return:		[block!]		"[private? depth fpr index chain key]"
+		/local blk
+	][
+		blk: from-entropy entropy
+		derive-key blk/1 blk/2 path private?
+	]
+
+	derive-bin: func [
+		bin			[binary!]
+		path		[block!]
+		private?	[logic!]
+		return:		[block!]		"[private? depth fpr index chain key]"
+		/local blk
+	][
+		blk: from-binary bin
+		derive-key blk/1 blk/2 path private?
 	]
 
 	encode: func [
@@ -128,12 +177,23 @@ bip32key: context [
 	]
 ]
 
+;-- test from https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki
 ;probe priv: bip32key/decode "xprv9s21ZrQH143K3QTDL4LXw2F7HEK3wJUD2nW2nRk4stbPy6cq3jPPqjiChkVvvNKmPGJxWUtg6LnF5kejMRNNU3TGtRBeJgk33yuGBxrMPHi"
 ;probe pub: bip32key/decode "xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8"
 ;probe secp256/create-pubkey priv/6
 
-;bin-entropy: #{000102030405060708090a0b0c0d0e0f}
-;seeds: Mnemonic/from-binary bin-entropy "123456"
+bin-entropy: #{000102030405060708090a0b0c0d0e0f}
+seeds: Mnemonic/from-binary bin-entropy "123456"
 ;master: bip32key/from-entropy seeds/2
 ;probe bip32key/encode reduce [true 0 0 0 master/2 master/1]
 ;probe bip32key/encode reduce [false 0 0 0 master/2 secp256/create-pubkey master/1]
+
+probe bip32key/encode bip32key/derive seeds/2 [80000000h] true
+probe bip32key/encode bip32key/derive seeds/2 [80000000h] false
+probe bip32key/encode bip32key/derive-bin bin-entropy [80000000h] true
+probe bip32key/encode bip32key/derive-bin bin-entropy [80000000h] false
+
+probe bip32key/encode bip32key/derive seeds/2 [80000000h 1] true
+probe bip32key/encode bip32key/derive seeds/2 [80000000h 1] false
+probe bip32key/encode bip32key/derive-bin bin-entropy [80000000h 1] true
+probe bip32key/encode bip32key/derive-bin bin-entropy [80000000h 1] false
