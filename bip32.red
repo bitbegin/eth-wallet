@@ -14,7 +14,7 @@ bip32key: context [
 
 	from-entropy: func [
 		entropy		[string!]
-		return:		[block! none!]
+		return:		[block! none!]	"[Il Ir] or none"
 		/local I Il Ir
 	][
 		if not Mnemonic/entropy-valid? entropy [do make error! "invalid entropy!"]
@@ -28,7 +28,7 @@ bip32key: context [
 		kpar		[binary!]
 		cpar		[binary!]
 		index		[integer!]
-		return:		[block! none!]
+		return:		[block! none!]	"[child Ir] or none"
 		/local data pub I Il Ir child
 	][
 		data: make binary! 1 + 32 + 4
@@ -49,7 +49,7 @@ bip32key: context [
 		kpar		[binary!]
 		cpar		[binary!]
 		index		[integer!]
-		return:		[block! none!]
+		return:		[block! none!]	"[child Ir] or none"
 		/local data pub I Il Ir pub2 child
 	][
 		if i < 0 [do make error! "hardened child!"]
@@ -63,25 +63,25 @@ bip32key: context [
 		reduce [child Ir]
 	]
 
-	;derive-priv: func [
-	;	entropy		[string!]
-	;	path		[block!]
-	;	return:		[block!]	;-- [private? depth fpr index chain key]
-	;	/local master len depth fpr index
-	;][
-	;	master: from-entropy entropy
-	;	len: length? path
-	;	if len = 0 [
-	;		return reduce [0 0 0 master/2 master/1]
-	;	]
-	;	depth: 0 fpr: 0 index: 0
-	;	loop len [
-;
-	;	]
-	;]
+	derive-priv: func [
+		entropy		[string!]
+		path		[block!]
+		return:		[block!]	;-- [private? depth fpr index chain key]
+		/local master len depth fpr index
+	][
+		master: from-entropy entropy
+		len: length? path
+		if len = 0 [
+			return reduce [0 0 0 master/2 master/1]
+		]
+		depth: 0 fpr: 0 index: 0
+		loop len [
+
+		]
+	]
 
 	encode: func [
-		data		[block!]
+		data		[block!]		"[private? depth fpr index chain key]"
 		return:		[string!]
 		/local bin
 	][
@@ -104,7 +104,7 @@ bip32key: context [
 
 	decode: func [
 		data		[string!]
-		return:		[block!]
+		return:		[block!]		"[private? depth fpr index chain key]"
 		/local bin ver private? depth fpr index chain key
 	][
 		bin: bip32-addr/decode58-check data
@@ -132,8 +132,8 @@ bip32key: context [
 ;probe pub: bip32key/decode "xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8"
 ;probe secp256/create-pubkey priv/6
 
-bin-entropy: #{000102030405060708090a0b0c0d0e0f}
-seeds: Mnemonic/from-binary bin-entropy "123456"
-master: bip32key/from-entropy seeds/2
-probe bip32key/encode reduce [true 0 0 0 master/2 master/1]
-probe bip32key/encode reduce [false 0 0 0 master/2 secp256/create-pubkey master/1]
+;bin-entropy: #{000102030405060708090a0b0c0d0e0f}
+;seeds: Mnemonic/from-binary bin-entropy "123456"
+;master: bip32key/from-entropy seeds/2
+;probe bip32key/encode reduce [true 0 0 0 master/2 master/1]
+;probe bip32key/encode reduce [false 0 0 0 master/2 secp256/create-pubkey master/1]

@@ -201,7 +201,7 @@ Mnemonic: context [
 		return:		[binary!]
 		/local type ebits
 	][
-		if not entropy-valid? entropy [cause-error 'user 'message "invalid entropy!"]
+		if not entropy-valid? entropy [do make error! "invalid entropy!"]
 		type: MnemonicType/for_total_size length? entropy
 		ebits: MnemonicType/entropy_bits type
 		entropy-to-binary copy/part entropy ebits
@@ -214,7 +214,7 @@ Mnemonic: context [
 	][
 		num: length? blk
 		if none = type: MnemonicType/for_word_count num [
-			cause-error 'user 'message "invalid type!"
+			do make error! "invalid type!"
 		]
 		ebits: MnemonicType/entropy_bits type
 		cbits: MnemonicType/checksum_bits type
@@ -225,7 +225,7 @@ Mnemonic: context [
 			vl: skip binary-to-entropy to binary! word-list/get-index w 21
 			append entropy vl
 		]
-		if not entropy-valid? entropy [cause-error 'user 'message "invalid entropy!"]
+		if not entropy-valid? entropy [do make error! "invalid entropy!"]
 		entropy
 	]
 
@@ -247,7 +247,7 @@ Mnemonic: context [
 		/local type cbits nwords bin ehash blk vl
 	][
 		if none = type: MnemonicType/for_key_size length? entropy [
-			cause-error 'user 'message "invalid type!"
+			do make error! "invalid type!"
 		]
 		cbits: MnemonicType/checksum_bits type
 		nwords: MnemonicType/word_count type
