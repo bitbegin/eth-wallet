@@ -80,15 +80,13 @@ bip32key: context [
 	]
 
 	derive-key: func [
-		mkey		[binary!]
-		mchain		[binary!]
+		key			[binary!]
+		chain		[binary!]
 		path		[block!]
 		private?	[logic!]
 		return:		[block!]		"[private? depth fpr index chain key]"
-		/local key chain len depth fpr index blk okey
+		/local len depth fpr index blk okey
 	][
-		key: mkey
-		chain: mchain
 		len: length? path
 		if len = 0 [
 			unless private? [key: secp256/create-pubkey key]
@@ -188,12 +186,32 @@ seeds: Mnemonic/from-binary bin-entropy "123456"
 ;probe bip32key/encode reduce [true 0 0 0 master/2 master/1]
 ;probe bip32key/encode reduce [false 0 0 0 master/2 secp256/create-pubkey master/1]
 
+print [80000000h]
 probe bip32key/encode bip32key/derive seeds/2 [80000000h] true
 probe bip32key/encode bip32key/derive seeds/2 [80000000h] false
 probe bip32key/encode bip32key/derive-bin bin-entropy [80000000h] true
 probe bip32key/encode bip32key/derive-bin bin-entropy [80000000h] false
 
+print [80000000h 1]
 probe bip32key/encode bip32key/derive seeds/2 [80000000h 1] true
 probe bip32key/encode bip32key/derive seeds/2 [80000000h 1] false
 probe bip32key/encode bip32key/derive-bin bin-entropy [80000000h 1] true
 probe bip32key/encode bip32key/derive-bin bin-entropy [80000000h 1] false
+
+print [80000000h 1 80000002h]
+probe bip32key/encode bip32key/derive seeds/2 [80000000h 1 80000002h] true
+probe bip32key/encode bip32key/derive seeds/2 [80000000h 1 80000002h] false
+probe bip32key/encode bip32key/derive-bin bin-entropy [80000000h 1 80000002h] true
+probe bip32key/encode bip32key/derive-bin bin-entropy [80000000h 1 80000002h] false
+
+print [80000000h 1 80000002h 2]
+probe bip32key/encode bip32key/derive seeds/2 [80000000h 1 80000002h 2] true
+probe bip32key/encode bip32key/derive seeds/2 [80000000h 1 80000002h 2] false
+probe bip32key/encode bip32key/derive-bin bin-entropy [80000000h 1 80000002h 2] true
+probe bip32key/encode bip32key/derive-bin bin-entropy [80000000h 1 80000002h 2] false
+
+print [80000000h 1 80000002h 2 1000000000]
+probe bip32key/encode bip32key/derive seeds/2 [80000000h 1 80000002h 2 1000000000] true
+probe bip32key/encode bip32key/derive seeds/2 [80000000h 1 80000002h 2 1000000000] false
+probe bip32key/encode bip32key/derive-bin bin-entropy [80000000h 1 80000002h 2 1000000000] true
+probe bip32key/encode bip32key/derive-bin bin-entropy [80000000h 1 80000002h 2 1000000000] false
