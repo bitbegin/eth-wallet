@@ -377,4 +377,63 @@ secp256: context [
 		free data
 		free as byte-ptr! ptr
 	]
+
+	_sha3-256: routine [
+		bin			[any-type!]
+		/local len data hash
+	][
+		switch TYPE_OF(bin) [
+			TYPE_STRING [
+				len: -1
+				data: as byte-ptr! unicode/to-utf8 as red-string! bin :len
+			]
+			TYPE_BINARY [
+				len: binary/rs-length? as red-binary! bin
+				data: binary/rs-head as red-binary! bin
+			]
+			default [
+				print-line TYPE_OF(bin)
+				fire [TO_ERROR(script invalid-arg) bin]
+			]
+		]
+		if len < 0 [
+			fire [TO_ERROR(script invalid-arg)	bin]
+		]
+		hash: allocate 32
+		SHA3_256 hash data len
+		stack/set-last as red-value! binary/load hash 32
+		free hash
+	]
+
+	sha3-256: func [
+		data		[binary! string!]
+		return:		[binary!]
+	][
+		_sha3-256 data
+	]
+
+	pubkey-to-address: func [
+		pubkey		[binary!]
+		return:		[string!]
+		/local ser hash20 ret
+	][
+		if 64 <> length? pubkey [do make error! "invalid public key"]
+		ser: skip secp256/serialize-pubkey pubkey false 1
+		hash20: copy/part skip sha3-256 ser 12 20
+		insert ret: enbase/base hash20 16 "0x"
+		ret
+	]
 ]
+
+print secp256/sha3-256 #{cf90dc2b34937fff7cf1eb4b260f1e5610231134b864761e508505938bbef8fc00aeb265797336b74146e018da7b78070f1f1072540a2c3fe83637ca5d605b3c}
+
+;4d741b6f1eb29cb2a9b9911c82f56fa8d73b04959d3d9d222895df6c0b28aa15
+print secp256/sha3-256 "The quick brown fox jumps over the lazy dog"
+
+;578951e24efd62a3d63a86f7cd19aaa53c898fe287d2552133220370240b572d
+print secp256/sha3-256 "The quick brown fox jumps over the lazy dog."
+
+
+probe pubkey: secp256/create-pubkey #{f8f8a2f43c8376ccb0871305060d7b27b0554d2cc72bccf41b2705608452f315}
+probe pubkey2: secp256/serialize-pubkey pubkey false
+print secp256/sha3-256 skip pubkey2 1
