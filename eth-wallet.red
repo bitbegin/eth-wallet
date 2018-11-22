@@ -10,7 +10,7 @@ Red [
 
 eth-wallet: context [
 
-	private-key: none
+	seeds: none
 
 	; set the bip32 path of the wallet
 	; type: block!
@@ -23,12 +23,12 @@ eth-wallet: context [
 		password	[string!]
 		return:		[block!]			;-- return [words entropy seed]
 	][
-		private-key: either seed [
+		seeds: either seed [
 			Mnemonic/from-words seed password
 		][
 			Mnemonic/new 'Type24Words password
 		]
-		private-key/1
+		seeds/1
 	]
 
 	get-address: func [
@@ -41,7 +41,7 @@ eth-wallet: context [
 		][
 			path: append copy bip32-path idx
 		]
-		xpub: bip32key/derive private-key/3 path false
+		xpub: bip32key/derive seeds/3 path false
 		secp256/pubkey-to-address xpub/6
 	]
 ]
