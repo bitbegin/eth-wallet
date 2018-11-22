@@ -424,16 +424,3 @@ secp256: context [
 		ret
 	]
 ]
-
-print secp256/sha3-256 #{cf90dc2b34937fff7cf1eb4b260f1e5610231134b864761e508505938bbef8fc00aeb265797336b74146e018da7b78070f1f1072540a2c3fe83637ca5d605b3c}
-
-;4d741b6f1eb29cb2a9b9911c82f56fa8d73b04959d3d9d222895df6c0b28aa15
-print secp256/sha3-256 "The quick brown fox jumps over the lazy dog"
-
-;578951e24efd62a3d63a86f7cd19aaa53c898fe287d2552133220370240b572d
-print secp256/sha3-256 "The quick brown fox jumps over the lazy dog."
-
-
-probe pubkey: secp256/create-pubkey #{f8f8a2f43c8376ccb0871305060d7b27b0554d2cc72bccf41b2705608452f315}
-probe pubkey2: secp256/serialize-pubkey pubkey false
-print secp256/sha3-256 skip pubkey2 1

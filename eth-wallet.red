@@ -33,22 +33,24 @@ eth-wallet: context [
 
 	get-address: func [
 		idx			[integer! none!]
-		return:		[binary!]
-		/local path pub
+		return:		[string!]
+		/local path xpub
 	][
 		either idx = none [
 			path: copy bip32-path
 		][
 			path: append copy bip32-path idx
 		]
-		pub: bip32key/derive private-key/3 path false
-		pub/6
+		xpub: bip32key/derive private-key/3 path false
+		secp256/pubkey-to-address xpub/6
 	]
 ]
 
 eth-wallet/init [abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about] "TREZOR"
-clear eth-wallet/bip32-path
-print eth-wallet/get-address none
-
-probe bip32key/encode bip32key/derive eth-wallet/private-key/3 [] true
-probe bip32key/encode bip32key/derive eth-wallet/private-key/3 [] false
+eth-wallet/bip32-path: [8000002Ch 8000003Ch 80000000h 0]
+;0x9c32F71D4DB8Fb9e1A58B0a80dF79935e7256FA6
+print eth-wallet/get-address 0
+;0x7AF7283bd1462C3b957e8FAc28Dc19cBbF2FAdfe
+print eth-wallet/get-address 1
+;0x05f48E30fCb69ADcd2A591Ebc7123be8BE72D7a1
+print eth-wallet/get-address 2
