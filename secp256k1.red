@@ -414,13 +414,11 @@ secp256: context [
 
 	pubkey-to-address: func [
 		pubkey		[binary!]
-		return:		[string!]
-		/local ser hash20 ret
+		return:		[binary!]
+		/local ser hash20
 	][
 		if 64 <> length? pubkey [do make error! "invalid public key"]
 		ser: skip secp256/serialize-pubkey pubkey false 1
-		hash20: copy/part skip sha3-256 ser 12 20
-		insert ret: enbase/base hash20 16 "0x"
-		ret
+		copy/part skip sha3-256 ser 12 20
 	]
 ]

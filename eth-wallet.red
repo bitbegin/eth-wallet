@@ -33,9 +33,9 @@ eth-wallet: context [
 
 	get-address: func [
 		idx			[integer! none!]
-		return:		[string!]
+		return:		[hex!]
 	][
-		secp256/pubkey-to-address get-public idx
+		to hex! secp256/pubkey-to-address get-public idx
 	]
 
 	get-public: func [
