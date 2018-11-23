@@ -11,6 +11,7 @@ Red [
 
 eth-wallet: context [
 
+	private-key: none
 	seeds: none
 
 	; set the bip32 path of the wallet
@@ -48,14 +49,13 @@ eth-wallet: context [
 	; 	data		[binary!]
 	; ]
 	sign-transaction: func [
-		idx			[integer!]
+		idx			[integer! none!]
 		tx			[block!]
 		chain-id	[integer!]
 		return:		[binary!]
 		/local key raw hash sig
 	][
-		;key: get-private idx
-		key: #{4646464646464646464646464646464646464646464646464646464646464646}
+		key: either integer? idx [get-private idx][private-key]
 		append tx reduce [chain-id 0 0]
 		raw: rlp/encode tx
 		hash: secp256/sha3-256 raw
@@ -106,6 +106,7 @@ print #{62f1d86b246c81bdd8f6c166d56896a4a5e1eddbcaebe06480e5c0bc74c28224} = eth-
 print #{49ee230b1605382ac1c40079191bca937fc30e8c2fa845b7de27a96ffcc4ddbf} = eth-wallet/get-private 1
 print #{eef2c0702151930b84cffcaa642af58e692956314519114e78f3211a6465f28b} = eth-wallet/get-private 2
 
+eth-wallet/private-key: #{4646464646464646464646464646464646464646464646464646464646464646}
 data: reduce [9 to hex! #{04A817C800} 21000 #{3535353535353535353535353535353535353535} to hex! #{0DE0B6B3A7640000} #{}]
 print #{f86c098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a76400008025a028ef61340bd939bc2195fe537567866003e1a15d3c71ff63e1590620aa636276a067cbe9d8997f761aecb703304b3800ccf555c9f3dc64214b297fb1966a3b6d83}
-= eth-wallet/sign-transaction 0 data 1
+= eth-wallet/sign-transaction none data 1
