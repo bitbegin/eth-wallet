@@ -412,13 +412,4 @@ secp256: context [
 		_sha3-256 data
 	]
 
-	pubkey-to-address: func [
-		pubkey		[binary!]
-		return:		[binary!]
-		/local ser hash20
-	][
-		if 64 <> length? pubkey [do make error! "invalid public key"]
-		ser: skip secp256/serialize-pubkey pubkey false 1
-		copy/part skip sha3-256 ser 12 20
-	]
 ]

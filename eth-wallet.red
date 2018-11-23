@@ -33,10 +33,25 @@ eth-wallet: context [
 
 	get-address: func [
 		idx			[integer! none!]
-		return:		[hex!]
+		return:		[string!]
 	][
-		to hex! secp256/pubkey-to-address get-public idx
+		bip32key/pubkey-to-address get-public idx
 	]
+
+	; tx: [
+	; 	nonce		[integer!]
+	; 	gas-price	[integer!]
+	; 	gas-limit	[integer!]
+	; 	to-address	[hex!]
+	; 	amount		[hex!]			;-- Wei
+	; 	data		[binary!]
+	; ]
+	sign-transaction: func [
+		idx			[integer!]
+		tx			[block!]
+		chain-id	[integer!]
+		return:		[binary!]
+	][]
 
 	get-public: func [
 		idx			[integer! none!]

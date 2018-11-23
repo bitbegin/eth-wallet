@@ -179,4 +179,38 @@ bip32key: context [
 		]
 		reduce [private? depth fpr index chain key]
 	]
+
+	pubkey-to-address: func [
+		pubkey		[binary!]
+		return:		[string!]
+		/local ser hash20
+	][
+		if 64 <> length? pubkey [do make error! "invalid public key"]
+		ser: skip secp256/serialize-pubkey pubkey false 1
+		encode-address copy/part skip secp256/sha3-256 ser 12 20
+	]
+
+	encode-address: func [
+		address		[binary!]
+		return:		[string!]
+		/local str hash ret i c
+	][
+		hash: enbase/base secp256/sha3-256 str: lowercase enbase/base address 16 2
+		ret: make string! 2 + length? str
+		i: 0
+		foreach c str [
+			either all [
+				c >= #"0"
+				c <= #"9"
+			][
+				append ret c
+			][
+				append ret either #"1" = pick hash 4 * i + 1 [uppercase c][lowercase c]
+			]
+			i: i + 1
+		]
+		insert ret "0x"
+		ret
+	]
+
 ]
