@@ -60,7 +60,7 @@ eth-wallet: context [
 		raw: rlp/encode tx
 		hash: secp256/sha3-256 raw
 		sig: secp256/sign hash key
-		poke tx 7 chain-id * 2 + 35
+		poke tx 7 chain-id * 2 + 35 + sig/1
 		poke tx 8 sig/2
 		poke tx 9 sig/3
 		rlp/encode tx
