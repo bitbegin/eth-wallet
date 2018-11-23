@@ -77,7 +77,9 @@ secp256: context [
 			klen	[integer!]
 			key		[byte-ptr!]
 			sig		[byte-ptr!]
+			ser		[byte-ptr!]
 			blk		[red-block!]
+			recid	[integer!]
 	][
 		dlen: binary/rs-length? hash
 		if dlen <> 32 [
@@ -91,14 +93,22 @@ secp256: context [
 		key: binary/rs-head prikey
 		sig: allocate 65
 		if 1 <> secp256k1_ecdsa_sign_recoverable secp256/ctx sig data key 0 null [
+			free sig
 			fire [TO_ERROR(script invalid-arg)	prikey]
 		]
-		blk: block/push-only* 3
-		block/rs-append blk as red-value! integer/push as integer! sig/65
-		block/rs-append blk as red-value! binary/load sig 32
-		block/rs-append blk as red-value! binary/load sig + 32 32
-		stack/set-last as red-value! blk
+		ser: allocate 64
+		recid: 0
+		if 1 <> secp256k1_ecdsa_recoverable_signature_serialize_compact secp256/ctx ser :recid sig [
+			free sig free ser
+			fire [TO_ERROR(script invalid-arg)	prikey]
+		]
 		free sig
+		blk: block/push-only* 3
+		block/rs-append blk as red-value! integer/push recid
+		block/rs-append blk as red-value! binary/load ser 32
+		block/rs-append blk as red-value! binary/load ser + 32 32
+		stack/set-last as red-value! blk
+		free ser
 	]
 
 	_verify: routine [
