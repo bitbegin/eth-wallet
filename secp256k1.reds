@@ -27,7 +27,7 @@ Red/System [
 
 
 #import [
-	SECP256K1-LIB stdcall [
+	SECP256K1-LIB cdecl [
 		secp256k1_context_create: "secp256k1_context_create" [
 			flags			[integer!]
 			return:			[integer!]
