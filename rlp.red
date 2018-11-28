@@ -30,7 +30,7 @@ rlp: context [
 			rejoin [encode-length length? buffer 192 buffer]
 		][
 			buffer: either hex? data [
-				trim/head reverse to binary! data
+				trim/head to binary! data
 			][
 				to binary! data
 			]
