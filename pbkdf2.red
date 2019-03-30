@@ -44,6 +44,7 @@ pbkdf2: context [
 			len: either key-len > blk-size [blk-size][key-len]
 			append/part output sum len
 			key-len: key-len - len
+			i: i + 1
 		]
 		output
 	]
